@@ -2,7 +2,7 @@
 Plotting functions for 'How long could volcanic plumes persist in the Venus atmosphere?'
 (Cohen et al. 2026).
 """
-
+# %%
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,6 +10,7 @@ import matplotlib.animation as animation
 
 from tools import plume_dict
 
+# %%
 def zmage(plobject, hmin=0, hmax=None, time_slice=-1, convert2yr=True,
           plume_markers=None, levels=None, savepath=None,
           save=False, sformat='png', savename='zmage.png'):
@@ -63,6 +64,65 @@ def zmage(plobject, hmin=0, hmax=None, time_slice=-1, convert2yr=True,
     else:
         plt.show()
 
+# %%
+def plume_cross_section(plobject, key, lev, times=[50,100,150], 
+                        save=False, savename='plume_cross_section.png',
+                        savepath=None, sformat='png'):
+    """Plot a cross section of the plume for a given variable.  
+    Creates a 2x3 subplot figure: top row horizontal (lon/lat) cross sections,
+    bottom row vertical (lat/altitude) cross sections at three different times.
+    """
+    if len(times) != 3:
+        raise ValueError("times must be a list of exactly 3 time indices")
+    
+    # Get plume longitude for vertical cross section
+    lon_idx = plobject.plumes['plume_6']['lon_idx']
+    interval = np.diff(plobject.data[key].time_counter.values)[0]/(60*60)
+    start_time = plobject.plumes['plume_6']['start_time']
+    fig, axes = plt.subplots(2, 3, figsize=(10, 8), sharey='row')
+    
+    for i, time_idx in enumerate(times):
+        # Horizontal cross section (top row)
+        time_hrs = (time_idx - start_time) * interval
+        ax_h = axes[0, i]
+        data_h = plobject.data[key][time_idx, lev, 65:, 40:70]*1e6
+        cs_h = ax_h.contourf(plobject.lons[40:70], plobject.lats[65:], data_h, cmap='Blues',
+                             levels=np.arange(28,46,1))
+        ax_h.axvline(plobject.lons[lon_idx+1], color='red', linestyle='dashed', label='Plume longitude')
+        ax_h.grid(True, alpha=0.5)
+        ax_h.set_title(f'{time_hrs:.0f} hrs', fontsize=16)
+        
+        if i == 0:
+            ax_h.set_ylabel('Latitude / deg', fontsize=16)
+        ax_h.set_xlabel('Longitude / deg', fontsize=16)
+        
+        # Vertical cross section (bottom row)
+        ax_v = axes[1, i]
+        data_v = plobject.data[key][time_idx, 15:25, 65:, lon_idx+1]*1e6
+        cs_v = ax_v.contourf(plobject.lats[65:], plobject.heights[15:25], data_v, cmap='Blues',
+                             levels=np.arange(28,46,1))
+        ax_v.axhline(plobject.heights[lev], color='red', linestyle='dashed', label='Plume altitude')
+        if i == 0:
+            ax_v.set_ylabel('Altitude / km', fontsize=16)
+        ax_v.set_xlabel('Latitude / deg', fontsize=16)
+        ax_v.grid(True, alpha=0.5)
+    
+    plt.subplots_adjust(wspace=0.2, hspace=0.35)
+
+    # Add single colorbar for all subplots
+    cbar = fig.colorbar(cs_v, ax=axes.ravel(), orientation='horizontal', pad=0.1)
+    cbar.set_label('ppm', fontsize=16)
+    fig.suptitle('Water vapour plume cross-sections', y=0.97, fontsize=18)
+    
+    if save:
+        if savepath is None:
+            savepath = ''
+        plt.savefig(savepath + savename, format=sformat, bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+
+# %%
 def dispersal_time(plobject, lev, keys, lats, lons,
                    axis_len=500, save=False, plot=True,
                    savename='plume_dispersal.png',
