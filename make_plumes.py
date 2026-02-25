@@ -31,8 +31,8 @@ import matplotlib.animation as animation
 # %%
 # Import local
 from classes import PlumeSim
-from plotting_functions import zmage, dispersal_time, dispersal_map, animate_chem_plume, summ_stats, sensitivity_test
-from tools import venusdict, plume_dict, calculate_so2_mass
+from plotting_functions import zmage, dispersal_time, dispersal_map, animate_chem_plume, summ_stats, sensitivity_test, plume_cross_section
+from tools import venusdict, plume_dict, name_dict
 
 # %% Main code block
 if __name__ == "__main__":
@@ -55,14 +55,14 @@ if __name__ == "__main__":
     chem_sim.load_file(chem)
     chem_sim.set_resolution()
     
-    # Figure 4: Background variability of H2O at 8 km
+    # Figure 5: Background variability of H2O at 8 km
     summ_stats(chem_sim, keys='h2o', lev=10, t0=0, tf=None,
-               savename='fig4' + '.' + filetype,
+               savename='fig5' + '.' + filetype,
                savepath=savedir,
                save=True, sformat=filetype)
-    # Figure 7: Background variability of H2O and HCl at 20 km
+    # Figure 8: Background variability of H2O and HCl at 20 km
     summ_stats(chem_sim, keys=['h2o', 'hcl'], lev=14, t0=0, tf=None,
-               savename='fig7' + '.' + filetype,
+               savename='fig8' + '.' + filetype,
                savepath=savedir,
                save=True, sformat=filetype)
     # Figure 11: Background variability of four gases at 35 km
@@ -70,11 +70,7 @@ if __name__ == "__main__":
                savename='fig11' + '.' + filetype,
                savepath=savedir,
                save=True, sformat=filetype)
-    # Figure 14: Background variability of SO2 at 70 km
-    summ_stats(chem_sim, keys='so2', lev=35, t0=0, tf=None,
-               savename='fig14' + '.' + filetype,
-               savepath=savedir,
-               save=True, sformat=filetype)
+
     chem_sim.close()
     del chem_sim
     
@@ -83,37 +79,37 @@ if __name__ == "__main__":
     plume_sim.load_file(plumes)
     plume_sim.set_resolution()
 
-    # Figure 3: Dispersal map of H2O plume at 8 km
-    dispersal_map(plume_sim, lev=10, keys=['h2o'], save=True, savename='fig3' + '.' + filetype, sformat=filetype, savepath=savedir)
-    # Figure 6: Dispersal map H2O and HCl plumes at 20 km
-    dispersal_map(plume_sim, lev=14, keys=['h2o', 'hcl'], save=True, savename='fig6' + '.' + filetype, sformat=filetype, savepath=savedir)
-    # Figure 9: Dispersal map of four gas plumes at 35 km
-    dispersal_map(plume_sim, lev=18, keys=['h2o', 'hcl', 'co', 'ocs'], save=True, savename='fig9' + '.' + filetype, sformat=filetype, savepath=savedir)
-    # Figure 10: Animation + cover image of H2O, HCl, CO, OCS plumes at 35 km
-    animate_chem_plume(plume_sim, lev=18, keys=['h2o', 'hcl', 'co', 'ocs'], t0=0, tf=500, savepath=savedir, savename='fig10', snapshot=100)
+    # Figure 2: Plume cross section of H2O at 35 km
+    plume_cross_section(plume_sim, key='h2o', lev=18, times=[54,104,174],
+                        save=True, savename='fig2' + '.' + filetype,
+                        savepath=savedir, sformat=filetype)
+
+    # Figure 4: Dispersal map of H2O plume at 8 km
+    dispersal_map(plume_sim, lev=10, keys=['h2o'], labels=name_dict, save=True, savename='fig4' + '.' + filetype, sformat=filetype, savepath=savedir)
+    # Figure 7: Dispersal map H2O and HCl plumes at 20 km
+    dispersal_map(plume_sim, lev=14, keys=['h2o', 'hcl'], labels=name_dict, save=True, savename='fig7' + '.' + filetype, sformat=filetype, savepath=savedir)
+    # Figure 10: Dispersal map of four gas plumes at 35 km
+    dispersal_map(plume_sim, lev=18, keys=['h2o', 'hcl', 'co', 'ocs'], labels=name_dict, save=True, savename='fig10' + '.' + filetype, sformat=filetype, savepath=savedir)
+    # Figure 12: Animation + cover image of H2O, HCl, CO, OCS plumes at 35 km
+    animate_chem_plume(plume_sim, lev=18, keys=['h2o', 'hcl', 'co', 'ocs'], labels=name_dict, t0=0, tf=500, savepath=savedir, savename='fig12', snapshot=100)
     # Figure 13: Animation + cover image of SO2 plume at 70 km
-    animate_chem_plume(plume_sim, lev=35, keys=['so2'], t0=0, tf=250, qscale=5, savepath=savedir, savename='fig13', snapshot=100)
+    #animate_chem_plume(plume_sim, lev=35, keys=['so2'], t0=0, tf=250, qscale=5, savepath=savedir, savename='fig13', snapshot=100)
     
-    # Figure 2: Dispersal time of H2O plumes at 8 km
-    dispersal_time(plume_sim, lev=10, keys=['h2o'], lats=[49,82], lons=[92,47], axis_len=500,
-                   save=True, savename='fig2' + '.' + filetype, sformat=filetype,
+    # Figure 3: Dispersal time of H2O plumes at 8 km
+    dispersal_time(plume_sim, lev=10, keys=['h2o'], lats=[49,82], lons=[92,47], 
+                   labels=name_dict, axis_len=500,
+                   save=True, savename='fig3' + '.' + filetype, sformat=filetype,
                    savepath=savedir)
-    # Figure 5: Dispersal time of H2O and HCl plumes at 20 km
-    dispersal_time(plume_sim, lev=14, keys=['h2o', 'hcl'], lats=[49,82], lons=[92,47], axis_len=500,
-                   save=True, savename='fig5' + '.' + filetype, sformat=filetype,
+    # Figure 6: Dispersal time of H2O and HCl plumes at 20 km
+    dispersal_time(plume_sim, lev=14, keys=['h2o', 'hcl'], lats=[49,82], lons=[92,47], 
+                   labels=name_dict, axis_len=500,
+                   save=True, savename='fig6' + '.' + filetype, sformat=filetype,
                    savepath=savedir)
-    # Figure 8: Dispersal time of four gas plumes at 35 km
-    dispersal_time(plume_sim, lev=18, keys=['h2o', 'hcl', 'co', 'ocs'], lats=[49,82], lons=[92,47], axis_len=500,
-                   save=True, savename='fig8' + '.' + filetype, sformat=filetype,
+    # Figure 9: Dispersal time of four gas plumes at 35 km
+    dispersal_time(plume_sim, lev=18, keys=['h2o', 'hcl', 'co', 'ocs'], lats=[49,82], lons=[92,47], 
+                   labels=name_dict, axis_len=500,
+                   save=True, savename='fig9' + '.' + filetype, sformat=filetype,
                    savepath=savedir)
-    # Figure 12: Dispersal time of SO2 plumes at 70 km
-    dispersal_time(plume_sim, lev=35, keys=['so2'], lats=[49,82], lons=[92,47], axis_len=500,
-                   save=True, savename='fig12' + '.' + filetype, sformat=filetype,
-                   savepath=savedir)
-    
-    # Calculation of SO2 mass in plume at 70 km for reference
-    so2_mass_kg = calculate_so2_mass(plume_sim, vmr_ppm=0.195)
-    print(f'SO2 mass in plume at 70 km: {so2_mass_kg:.2f} kg')
 
     plume4 = PlumeSim(venusdict, plume_dict, 'scale_1.4')
     plume4.load_file(sens_tests[0])
@@ -135,11 +131,11 @@ if __name__ == "__main__":
     plume0.load_file(sens_tests[4])
     plume0.set_resolution()
 
-    # Figure 15: Sensitivity test for H2O plume dispersal time at three altitudes
+    # Figure 13: Sensitivity test for H2O plume dispersal time at three altitudes
     sens_vals = sensitivity_test(plume5=plume_sim, plume4=plume4, plume3=plume3,
                      plume2=plume2, plume1=plume1, plume0=plume0,
-                     levs=[10,14,18], key='h2o',
-                     save=True, savename='fig15' + '.' + filetype,
+                     labels=name_dict, levs=[10,14,18], key='h2o',
+                     save=True, savename='fig13' + '.' + filetype,
                      savepath=savedir, sformat=filetype)
     print(sens_vals)
 

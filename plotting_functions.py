@@ -65,7 +65,7 @@ def zmage(plobject, hmin=0, hmax=None, time_slice=-1, convert2yr=True,
         plt.show()
 
 # %%
-def plume_cross_section(plobject, key, lev, times=[50,100,150], 
+def plume_cross_section(plobject, key, lev, times=[54,104,174], 
                         save=False, savename='plume_cross_section.png',
                         savepath=None, sformat='png'):
     """Plot a cross section of the plume for a given variable.  
@@ -77,9 +77,10 @@ def plume_cross_section(plobject, key, lev, times=[50,100,150],
     
     # Get plume longitude for vertical cross section
     lon_idx = plobject.plumes['plume_6']['lon_idx']
+    lat_idx = plobject.plumes['plume_6']['lat_idx']
     interval = np.diff(plobject.data[key].time_counter.values)[0]/(60*60)
     start_time = plobject.plumes['plume_6']['start_time']
-    fig, axes = plt.subplots(2, 3, figsize=(10, 8), sharey='row')
+    fig, axes = plt.subplots(2, 3, figsize=(10, 8), sharey='row', sharex='col')
     
     for i, time_idx in enumerate(times):
         # Horizontal cross section (top row)
@@ -88,31 +89,38 @@ def plume_cross_section(plobject, key, lev, times=[50,100,150],
         data_h = plobject.data[key][time_idx, lev, 65:, 40:70]*1e6
         cs_h = ax_h.contourf(plobject.lons[40:70], plobject.lats[65:], data_h, cmap='Blues',
                              levels=np.arange(28,46,1))
-        ax_h.axvline(plobject.lons[lon_idx+1], color='red', linestyle='dashed', label='Plume longitude')
+        ax_h.axhline(plobject.lats[lat_idx+1], color='red', linestyle='dashed', label='Plume latitude')
         ax_h.grid(True, alpha=0.5)
         ax_h.set_title(f'{time_hrs:.0f} hrs', fontsize=16)
         
         if i == 0:
             ax_h.set_ylabel('Latitude / deg', fontsize=16)
-        ax_h.set_xlabel('Longitude / deg', fontsize=16)
+        #ax_h.set_xlabel('Longitude / deg', fontsize=16)
         
         # Vertical cross section (bottom row)
         ax_v = axes[1, i]
-        data_v = plobject.data[key][time_idx, 15:25, 65:, lon_idx+1]*1e6
-        cs_v = ax_v.contourf(plobject.lats[65:], plobject.heights[15:25], data_v, cmap='Blues',
+        # data_v = plobject.data[key][time_idx, 15:25, 65:, lon_idx+1]*1e6
+        # cs_v = ax_v.contourf(plobject.lats[65:], plobject.heights[15:25], data_v, cmap='Blues',
+        #                      levels=np.arange(28,46,1))
+        # ax_v.axhline(plobject.heights[lev], color='red', linestyle='dashed', label='Plume altitude')
+        # if i == 0:
+        #     ax_v.set_ylabel('Altitude / km', fontsize=16)
+        # ax_v.set_xlabel('Latitude / deg', fontsize=16)
+        data_v = plobject.data[key][time_idx, 15:25, lat_idx+1, 40:70]*1e6
+        cs_v = ax_v.contourf(plobject.lons[40:70], plobject.heights[15:25], data_v, cmap='Blues',
                              levels=np.arange(28,46,1))
         ax_v.axhline(plobject.heights[lev], color='red', linestyle='dashed', label='Plume altitude')
         if i == 0:
             ax_v.set_ylabel('Altitude / km', fontsize=16)
-        ax_v.set_xlabel('Latitude / deg', fontsize=16)
+        ax_v.set_xlabel('Longitude / deg', fontsize=16)
         ax_v.grid(True, alpha=0.5)
     
-    plt.subplots_adjust(wspace=0.2, hspace=0.35)
+    plt.subplots_adjust(wspace=0.2, hspace=0.15)
 
     # Add single colorbar for all subplots
     cbar = fig.colorbar(cs_v, ax=axes.ravel(), orientation='horizontal', pad=0.1)
     cbar.set_label('ppm', fontsize=16)
-    fig.suptitle('Water vapour plume cross-sections', y=0.97, fontsize=18)
+    fig.suptitle(r'H$_2$O plume cross-sections', y=0.97, fontsize=18)
     
     if save:
         if savepath is None:
@@ -123,7 +131,7 @@ def plume_cross_section(plobject, key, lev, times=[50,100,150],
         plt.show()
 
 # %%
-def dispersal_time(plobject, lev, keys, lats, lons,
+def dispersal_time(plobject, lev, keys, lats, lons, labels,
                    axis_len=500, save=False, plot=True,
                    savename='plume_dispersal.png',
                    savepath=None,
@@ -164,9 +172,6 @@ def dispersal_time(plobject, lev, keys, lats, lons,
         series1 = plobject.data[key][:,lev,lats[0],lons[0]]
         series2 = plobject.data[key][:,lev,lats[1],lons[1]]
         # Get background value of tracer before plume starts
-        # if key=='co':
-        #     background_val = 8.0e-06
-        # else:
         background_val = series1[plobject.plumes['plume_1']['start_time']-2].values*1.005
         print(background_val)
     
@@ -208,8 +213,8 @@ def dispersal_time(plobject, lev, keys, lats, lons,
             ax.plot(time_axis, data2, color='green', label=f'Lat {np.round(plobject.lats[lats[1]],2)} deg, {np.round(disp_hours2,2)} hrs')
             ax.plot(time_axis, np.ones_like(data1)*background_val*1e6, color='red',
                     linestyle='dashed', label='Before eruption')
-            ax.set_title(f'{key.upper()}', fontsize=16)
-            ax.set_ylabel(f'{key.upper()} vmr / ppm', fontsize=16)
+            ax.set_title(f'{labels[key]}', fontsize=16)
+            ax.set_ylabel(f'{labels[key]} vmr / ppm', fontsize=16)
             ax.set_ylim([background_val*1e6*0.8, data1.max()*1.2])
             ax.set_xlabel('Time / hours', fontsize=16)
             plt.legend(loc='upper right')
@@ -225,7 +230,7 @@ def dispersal_time(plobject, lev, keys, lats, lons,
 
     return disp_times
 
-def dispersal_map(plobject, lev, keys,
+def dispersal_map(plobject, lev, keys, labels,
                    save=False,
                    savename='dispersal_map.png',
                    savepath=None,
@@ -298,7 +303,7 @@ def dispersal_map(plobject, lev, keys,
         cf = ax.contourf(plobject.lons, plobject.lats, map_hours, cmap=cmap)
         ax.plot(plobject.lons[lon_eq], plobject.lats[lat_eq], 'ro', label='Equatorial eruption')
         ax.plot(plobject.lons[lon_hl], plobject.lats[lat_hl], 'ko', label='High-latitude eruption')
-        ax.set_title(f'{key.upper()} vmr above {np.round(background*1e6,2)} ppm', fontsize=16)
+        ax.set_title(f'{labels[key]} vmr above {np.round(background*1e6,2)} ppm', fontsize=16)
         ax.grid()
         
         # Labels
@@ -321,7 +326,7 @@ def dispersal_map(plobject, lev, keys,
 
     plt.show()
 
-def animate_chem_plume(plobject, lev, keys, t0, tf, n=4, qscale=1,
+def animate_chem_plume(plobject, lev, keys, labels, t0, tf, n=4, qscale=1,
                   savename='test.png', savepath=None, snapshot=None):
     """
     Create an animation of a chemical plume.
@@ -428,7 +433,7 @@ def animate_chem_plume(plobject, lev, keys, t0, tf, n=4, qscale=1,
                        v[0,::n,::n], **quiv_args), X=0.9, Y=1.05, U=qscale*10, label=f'{qscale*10} m/s',
                      labelpos='E', coordinates='axes', color='black')
             
-            ax.set_title(key.upper(), color='black', y=1.05, fontsize=16)
+            ax.set_title(labels[key], color='black', y=1.05, fontsize=16)
             
             # Labels
             if i % num_cols == 0:
@@ -555,7 +560,7 @@ def summ_stats(plobject, keys, lev, t0, tf, savename='stats.png',
     plt.show()
 
 def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
-                     levs=[10,14,18], key='h2o',
+                     labels, levs=[10,14,18], key='h2o',
                      save=False,
                      savename='sensitivity_test.png',
                      savepath=None,
@@ -611,7 +616,7 @@ def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
         ax[i].set_ylabel('Dispersal time / hours', fontsize=16)
         ax[i].legend()
 
-    fig.suptitle(f'Sensitivity test for {key.upper()} plume dispersal time', y=0.99, fontsize=18)
+    fig.suptitle(f'Sensitivity test for {labels[key]} plume dispersal time', y=0.99, fontsize=18)
     plt.subplots_adjust(wspace=0.2, hspace=0.1)
     if save:
         plt.savefig(savepath + savename, format=sformat, bbox_inches='tight')
