@@ -20,7 +20,7 @@ import matplotlib.animation as animation
 # Import local
 from classes import PlumeSim
 from plotting_functions import zmage, dispersal_time, dispersal_map, animate_chem_plume, summ_stats, sensitivity_test, plume_cross_section
-from tools import venusdict, plume_dict, calculate_so2_mass
+from tools import venusdict, plume_dict, calculate_so2_mass, name_dict
 
 
 # %% Main code block
@@ -32,6 +32,7 @@ if __name__ == "__main__":
     chem_sim.set_resolution()
 
     summ_stats(chem_sim, keys=['so2'], lev=35, t0=0, tf=None,
+                name_dict=name_dict,
                 savename='fig16' + '.' + filetype,
                 savepath=savedir,
                 save=True, sformat=filetype)

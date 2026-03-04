@@ -15,11 +15,19 @@ venusdict = {'radius': 6051.3, 'g': 8.87, 'rotperiod' : 243.0,
              'scaleh': 16.,
              'name': 'Venus'}
 # Altitude levels in km for VPCM 50 level outputs
-heights50 = [0.,  0.05,  0.2,  0.4,  0.8,  1.3,  2.2,  3.3,  4.7,  6.5,  8.6,
-       11.1, 14., 17.3, 20.9, 24.7, 28.5, 32.1, 35.4, 38.6, 41.6, 44.4,
-       47.1, 49.7, 52.1, 54.3, 56.4, 58.4, 60.3, 62.1, 63.9, 65.6, 67.4,
-       69., 70.7, 72.3, 73.9, 75.4, 76.9, 78.4, 79.8, 81.2, 82.6, 84.,
-       85.3, 86.8, 88.7, 91.2, 97.] 
+heights50 = [9.4504710e-03, 4.8338074e-02, 1.5300426e-01, 3.7324557e-01,
+       7.5411582e-01, 1.3392169e+00, 2.1695750e+00, 3.2827427e+00,
+       4.7116103e+00, 6.4832373e+00, 8.6177559e+00, 1.1128335e+01,
+       1.4020479e+01, 1.7288918e+01, 2.0912828e+01, 2.4761955e+01,
+       2.8558361e+01, 3.2130924e+01, 3.5487930e+01, 3.8643879e+01,
+       4.1625511e+01, 4.4466003e+01, 4.7189983e+01, 4.9781677e+01,
+       5.2210793e+01, 5.4474300e+01, 5.6580246e+01, 5.8551716e+01,
+       6.0436192e+01, 6.2270138e+01, 6.4059181e+01, 6.5802261e+01,
+       6.7509895e+01, 6.9198883e+01, 7.0857117e+01, 7.2468269e+01,
+       7.4031113e+01, 7.5544807e+01, 7.7022598e+01, 7.8483002e+01,
+       7.9931213e+01, 8.1360779e+01, 8.2763893e+01, 8.4131378e+01,
+       8.5458458e+01, 8.6925591e+01, 8.8879539e+01, 9.1365417e+01,
+       9.4282623e+01, 9.7128662e+01]
 # Altitude levels in km for VPCM 78 level outputs
 heights78 = [9.45306290e-03, 4.83510271e-02, 1.53046221e-01, 3.73352647e-01,
        7.54337728e-01, 1.33960199e+00, 2.17016840e+00, 3.28359985e+00,
@@ -48,8 +56,8 @@ plume_dict = {  'plume_1': {'name': 'h2o_lev10_eq', 'lev': 10, 'lat_idx': 49, 'l
                 'plume_4': {'name': 'h2o_hcl_lev14_hl', 'lev': 14, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 127},
                 'plume_5': {'name': 'four_gases_lev18_eq', 'lev': 18, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 127},
                 'plume_6': {'name': 'four_gases_lev18_hl', 'lev': 18, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 127},
-                'plume_7': {'name': 'so2_lev35_eq', 'lev': 35, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 127},
-                'plume_8': {'name': 'so2_lev35_hl', 'lev': 35, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 127}
+#               'plume_7': {'name': 'so2_lev35_eq', 'lev': 35, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 127},
+#                'plume_8': {'name': 'so2_lev35_hl', 'lev': 35, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 127}
             }
 
 name_dict = {'h2o': 'H$_2$O', 'hcl': 'HCl', 'co': 'CO', 'ocs': 'OCS', 'so2': 'SO$_2$'}
@@ -120,3 +128,28 @@ def calculate_so2_mass(sim_object, vmr_ppm=0.195):
     mass_kg = (n_so2 * M_SO2)
     
     return mass_kg
+
+# %%
+def max_dispersal(plobject, lev, lat, threshold=1.005):
+
+    cube = plobject.data['h2o'][:,lev,:,:]
+    interval = np.diff(cube.time_counter.values)[0]
+    background = np.mean(cube.values)*threshold
+    post_eruption = cube[plobject.plumes['plume_1']['end_time']:,:,:]
+    # Only consider data after plume forcing has finished
+    mask = post_eruption.values > background
+    # Boolean array with same dimension as cube, True is where values are above threshold
+    flattened = np.count_nonzero(mask, axis=0)
+    # Count how many time outputs are True for each lon x lat point
+    map_hours = flattened * interval / (60*60)
+
+    top_half = np.max(map_hours[lat:, :])
+    top_coords = np.argmax(map_hours[lat:, :])
+    top_row, top_col = np.unravel_index(top_coords, map_hours.shape)
+    bottom_half = np.max(map_hours[:lat, :])
+    bottom_coords = np.argmax(map_hours[:lat, :])
+    bottom_row, bottom_col = np.unravel_index(bottom_coords, map_hours.shape)
+
+    results_dict = {'hl_plume_max': top_half, 'hl_max_coords': (lat + top_row, top_col), 'eq_plume_max': bottom_half, 'eq_max_coords': (bottom_row, bottom_col)}
+    return results_dict
+# %%

@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-from tools import plume_dict
+from tools import plume_dict, max_dispersal
 
 # %%
 def zmage(plobject, hmin=0, hmax=None, time_slice=-1, convert2yr=True,
@@ -82,6 +82,8 @@ def plume_cross_section(plobject, key, lev, times=[54,104,174],
     start_time = plobject.plumes['plume_6']['start_time']
     fig, axes = plt.subplots(2, 3, figsize=(10, 8), sharey='row', sharex='col')
     
+    # prepare letters for all 6 subplots
+    letters = [chr(97 + k) for k in range(6)]  # ['a','b',...,'f']
     for i, time_idx in enumerate(times):
         # Horizontal cross section (top row)
         time_hrs = (time_idx - start_time) * interval
@@ -91,27 +93,21 @@ def plume_cross_section(plobject, key, lev, times=[54,104,174],
                              levels=np.arange(28,46,1))
         ax_h.axhline(plobject.lats[lat_idx+1], color='red', linestyle='dashed', label='Plume latitude')
         ax_h.grid(True, alpha=0.5)
-        ax_h.set_title(f'{time_hrs:.0f} hrs', fontsize=16)
+        ax_h.set_title(f'{letters[i]}) {time_hrs:.0f} hrs', fontsize=16)
         
         if i == 0:
             ax_h.set_ylabel('Latitude / deg', fontsize=16)
-        #ax_h.set_xlabel('Longitude / deg', fontsize=16)
         
         # Vertical cross section (bottom row)
         ax_v = axes[1, i]
-        # data_v = plobject.data[key][time_idx, 15:25, 65:, lon_idx+1]*1e6
-        # cs_v = ax_v.contourf(plobject.lats[65:], plobject.heights[15:25], data_v, cmap='Blues',
-        #                      levels=np.arange(28,46,1))
-        # ax_v.axhline(plobject.heights[lev], color='red', linestyle='dashed', label='Plume altitude')
-        # if i == 0:
-        #     ax_v.set_ylabel('Altitude / km', fontsize=16)
-        # ax_v.set_xlabel('Latitude / deg', fontsize=16)
         data_v = plobject.data[key][time_idx, 15:25, lat_idx+1, 40:70]*1e6
         cs_v = ax_v.contourf(plobject.lons[40:70], plobject.heights[15:25], data_v, cmap='Blues',
                              levels=np.arange(28,46,1))
         ax_v.axhline(plobject.heights[lev], color='red', linestyle='dashed', label='Plume altitude')
+        # add letter label to bottom titles as well
+        ax_v.set_title(f'{letters[i+3]})', fontsize=16, pad=4)
         if i == 0:
-            ax_v.set_ylabel('Altitude / km', fontsize=16)
+            ax_v.set_ylabel('Height / km', fontsize=16)
         ax_v.set_xlabel('Longitude / deg', fontsize=16)
         ax_v.grid(True, alpha=0.5)
     
@@ -131,7 +127,7 @@ def plume_cross_section(plobject, key, lev, times=[54,104,174],
         plt.show()
 
 # %%
-def dispersal_time(plobject, lev, keys, lats, lons, labels,
+def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
                    axis_len=500, save=False, plot=True,
                    savename='plume_dispersal.png',
                    savepath=None,
@@ -172,12 +168,12 @@ def dispersal_time(plobject, lev, keys, lats, lons, labels,
         series1 = plobject.data[key][:,lev,lats[0],lons[0]]
         series2 = plobject.data[key][:,lev,lats[1],lons[1]]
         # Get background value of tracer before plume starts
-        background_val = series1[plobject.plumes['plume_1']['start_time']-2].values*1.005
-        print(background_val)
+        background_val1 = series1[plobject.plumes['plume_1']['start_time']-1].values*threshold
+        background_val2 = series2[plobject.plumes['plume_2']['start_time']-1].values*threshold
     
         counter1 = 0
         for t in range(plobject.plumes['plume_1']['end_time'], series1.shape[0]):
-            if series1[t].values > background_val:
+            if series1[t].values > background_val1:
                 # Count how many time steps tracer value remains above background
                 counter1 = counter1 + 1
             else:
@@ -186,7 +182,7 @@ def dispersal_time(plobject, lev, keys, lats, lons, labels,
 
         counter2 = 0
         for t in range(plobject.plumes['plume_1']['end_time'], series2.shape[0]):
-            if series2[t].values > background_val:
+            if series2[t].values > background_val2:
                 # Count how many time steps tracer value remains above background
                 counter2 = counter2 + 1
             else:
@@ -211,11 +207,15 @@ def dispersal_time(plobject, lev, keys, lats, lons, labels,
             ax = fig.add_subplot(num_rows, num_cols, position[i])
             ax.plot(time_axis, data1, color='blue', label=f'Lat {np.round(plobject.lats[lats[0]],2)} deg, {np.round(disp_hours1,2)} hrs')
             ax.plot(time_axis, data2, color='green', label=f'Lat {np.round(plobject.lats[lats[1]],2)} deg, {np.round(disp_hours2,2)} hrs')
-            ax.plot(time_axis, np.ones_like(data1)*background_val*1e6, color='red',
+            ax.plot(time_axis, np.ones_like(data1)*background_val1*1e6, color='red',
                     linestyle='dashed', label='Before eruption')
-            ax.set_title(f'{labels[key]}', fontsize=16)
-            ax.set_ylabel(f'{labels[key]} vmr / ppm', fontsize=16)
-            ax.set_ylim([background_val*1e6*0.8, data1.max()*1.2])
+            title = name_dict.get(key, key)
+            if num_subplots > 1:
+                letter = chr(97 + i)
+                title = f'{letter}) {title}'
+            ax.set_title(title, fontsize=16)
+            ax.set_ylabel(f'{name_dict[key]} vmr / ppm', fontsize=16)
+            ax.set_ylim([background_val1*1e6*0.8, data1.max()*1.2])
             ax.set_xlabel('Time / hours', fontsize=16)
             plt.legend(loc='upper right')
     if plot==True:
@@ -230,21 +230,38 @@ def dispersal_time(plobject, lev, keys, lats, lons, labels,
 
     return disp_times
 
-def dispersal_map(plobject, lev, keys, labels,
+# %%
+def dispersal_map(plobject, lev, keys, name_dict, threshold,
                    save=False,
                    savename='dispersal_map.png',
                    savepath=None,
                    sformat='png'):
+    """Create maps showing how long plume tracer remains above background.
+
+    Args:
+        plobject (PlumeSim): PlumeSim object containing the data.
+        lev (int): Vertical level index.
+        keys (str or list): Variable key(s) to plot.
+        labels (dict, optional): Legacy mapping used for plot titles. If
+            ``name_dict`` is provided it takes precedence. Defaults to None.
+        name_dict (dict, optional): Preferred mapping from variable key to
+            pretty name, used exactly like in ``summ_stats``. Defaults to None.
+        save (bool): Whether to save the figure. Defaults to False.
+        savename (str): Filename for saved figure. Defaults to
+            'dispersal_map.png'.
+        savepath (str): Directory to save in. Defaults to None.
+        sformat (str): File format (png, pdf, etc). Defaults to 'png'.
+    """
     if isinstance(keys, str):
         keys = [keys]
 
     # Define styles
     styles = {
-        'h2o': {'cmap': 'Blues', 'vmax': 45.0},
-        'co':  {'cmap': 'Purples', 'vmax': 12.0},
-        'ocs': {'cmap': 'YlOrBr', 'vmax': 4.5},
-        'hcl': {'cmap': 'Reds', 'vmax': 0.6},
-        'so2': {'cmap': 'Greens', 'vmax': 1.3}
+        'h2o': {'cmap': 'Blues', 'vmax': 45.0, 'background': 30.0},
+        'co':  {'cmap': 'Purples', 'vmax': 12.0, 'background': 7.35},
+        'ocs': {'cmap': 'YlOrBr', 'vmax': 4.5, 'background': 1.0},
+        'hcl': {'cmap': 'Reds', 'vmax': 0.6, 'background': 0.4},
+        'so2': {'cmap': 'Greens', 'vmax': 1.3, 'background': 0.13}
     }
 
     # Calculate layout
@@ -279,12 +296,7 @@ def dispersal_map(plobject, lev, keys, labels,
         
         cube = plobject.data[key][:,lev,:,:]
         interval = np.diff(cube.time_counter.values)[0]
-        # if key=='co':
-        #     background = 8.0e-06
-        # else:
-        background = cube[plobject.plumes['plume_1']['start_time']-1, lon_eq, lat_eq].values*1.05
-        # Extract age of air tracer data at desired model level
-        # Get time and space indices of plume
+        background = styles[key]['background']*1e-6*threshold
         post_eruption = cube[plobject.plumes['plume_1']['end_time']:,:,:]
         # Only consider data after plume forcing has finished
         mask = post_eruption.values > background
@@ -302,8 +314,19 @@ def dispersal_map(plobject, lev, keys, labels,
 
         cf = ax.contourf(plobject.lons, plobject.lats, map_hours, cmap=cmap)
         ax.plot(plobject.lons[lon_eq], plobject.lats[lat_eq], 'ro', label='Equatorial eruption')
-        ax.plot(plobject.lons[lon_hl], plobject.lats[lat_hl], 'ko', label='High-latitude eruption')
-        ax.set_title(f'{labels[key]} vmr above {np.round(background*1e6,2)} ppm', fontsize=16)
+        ax.plot(plobject.lons[lon_hl], plobject.lats[lat_hl], 'ro', label='High-latitude eruption')
+
+        if name_dict is not None and key in name_dict:
+            title_name = name_dict[key]
+        else:
+            title_name = cube.long_name or cube.name
+
+        # add subplot letter if more than one panel
+        if num_subplots > 1:
+            letter = chr(97 + i)
+            title_name = f'{letter}) {title_name}'
+
+        ax.set_title(f'{title_name} vmr above {background*1e6:.2f} ppm', fontsize=16)
         ax.grid()
         
         # Labels
@@ -314,7 +337,7 @@ def dispersal_map(plobject, lev, keys, labels,
 
         cbar = plt.colorbar(cf, ax=ax, orientation='horizontal')
         cbar.set_label('Hours', fontsize=16)
-        ax.legend()
+        # ax.legend()
     fig.suptitle(f'Plume dispersal maps, h = {np.round(plobject.heights[lev], 2)} km', y=0.97, fontsize=18)
     plt.subplots_adjust(wspace=0.3, hspace=0.3)
     # Remove unused axes
@@ -326,7 +349,8 @@ def dispersal_map(plobject, lev, keys, labels,
 
     plt.show()
 
-def animate_chem_plume(plobject, lev, keys, labels, t0, tf, n=4, qscale=1,
+# %%
+def animate_chem_plume(plobject, lev, keys, name_dict, t0, tf, n=4, qscale=1,
                   savename='test.png', savepath=None, snapshot=None):
     """
     Create an animation of a chemical plume.
@@ -351,8 +375,8 @@ def animate_chem_plume(plobject, lev, keys, labels, t0, tf, n=4, qscale=1,
     # Define styles
     styles = {
         'h2o': {'cmap': 'Blues', 'vmax': 45.0},
-        'co':  {'cmap': 'Purples', 'vmax': 12.0},
-        'ocs': {'cmap': 'YlOrBr', 'vmax': 4.5},
+        'co':  {'cmap': 'Purples', 'vmax': 11.0},
+        'ocs': {'cmap': 'Greens', 'vmax': 1.5},
         'hcl': {'cmap': 'Reds', 'vmax': 0.6},
         'so2': {'cmap': 'Greens', 'vmax': 0.2}
     }
@@ -433,7 +457,12 @@ def animate_chem_plume(plobject, lev, keys, labels, t0, tf, n=4, qscale=1,
                        v[0,::n,::n], **quiv_args), X=0.9, Y=1.05, U=qscale*10, label=f'{qscale*10} m/s',
                      labelpos='E', coordinates='axes', color='black')
             
-            ax.set_title(labels[key], color='black', y=1.05, fontsize=16)
+            # determine title text including optional letter prefix
+            title_text = name_dict[key]
+            if num_subplots > 1:
+                letter = chr(97 + i)
+                title_text = f'{letter}) {title_text}'
+            ax.set_title(title_text, color='black', y=1.05, fontsize=16)
             
             # Labels
             if i % num_cols == 0:
@@ -482,11 +511,15 @@ def animate_chem_plume(plobject, lev, keys, labels, t0, tf, n=4, qscale=1,
     ani.save(savepath + f'{savename}.mp4', writer='ffmpeg')
     # ani.save('myanimation.gif', writer='pillow') #alternative
 
-def summ_stats(plobject, keys, lev, t0, tf, savename='stats.png',
+# %%
+def summ_stats(plobject, keys, lev, t0, tf, name_dict=None, savename='stats.png',
                savepath=None,
                save=False, sformat='png'):
     """
-    Compute variability of chemical species (Standard deviation on lon-lat grid).
+    Compute variability of chemical species (standard deviation on lon-lat grid).
+
+    The plot titles are taken from ``name_dict`` when provided; otherwise the
+    long name or variable name from the dataset is used.
 
     Args:
         plobject (PlumeSim): PlumeSim object containing the data.
@@ -494,6 +527,8 @@ def summ_stats(plobject, keys, lev, t0, tf, savename='stats.png',
         lev (int): Vertical level index.
         t0 (int): Start time index.
         tf (int): End time index.
+        name_dict (dict, optional): Mapping from variable key to pretty name.
+            Defaults to None.
         savename (str): Filename for the saved plot. Defaults to 'stats.png'.
         savepath (str): Directory path to save the plot. Defaults to None.
         save (bool): Whether to save the plot. Defaults to False.
@@ -515,7 +550,11 @@ def summ_stats(plobject, keys, lev, t0, tf, savename='stats.png',
         # Extract data for the specified time range and level
         cube = plobject.data[key][t0:tf,lev,:,:]
         
-        title_name = cube.long_name or cube.name
+        # Determine species name (use dictionary lookup if provided)
+        if name_dict is not None and key in name_dict:
+            title_name = name_dict[key]
+        else:
+            title_name = cube.long_name or cube.name
         title_height = np.round(plobject.heights[lev],2)
         
         # Convert units based on species
@@ -533,9 +572,15 @@ def summ_stats(plobject, keys, lev, t0, tf, savename='stats.png',
         ax1 = axes[i, 0]
         ax2 = axes[i, 1]
         
+        # determine subplot labels (a), b), etc) for each axes
+        # index ordering: row-major, left-to-right
+        base_index = i * num_cols
+        label1 = f"{chr(97 + base_index)})"  # a), b), ...
+        label2 = f"{chr(97 + base_index + 1)})"
+        
         # Plot mean abundance
         abd_plot = ax1.contourf(plobject.lons, plobject.lats, avg, cmap='afmhot')
-        ax1.set_title(f'Mean {title_name} at {title_height} km', fontsize=16)
+        ax1.set_title(f'{label1} Mean {title_name} at {title_height} km', fontsize=16)
         ax1.set_ylabel('Latitude / deg', fontsize=16)
         cbar1 = plt.colorbar(abd_plot, orientation='horizontal', ax=ax1)
         cbar1.set_label(unit, fontsize=16)
@@ -543,7 +588,7 @@ def summ_stats(plobject, keys, lev, t0, tf, savename='stats.png',
 
         # Plot coefficient of variation
         std_plot = ax2.contourf(plobject.lons, plobject.lats, 100*std/avg, cmap='copper')
-        ax2.set_title(f'Coeff of variation in {title_name} at {title_height} km', fontsize=16)
+        ax2.set_title(f'{label2} Coefficient of variation in {title_name} at {title_height} km', fontsize=16)
         cbar2 = plt.colorbar(std_plot, orientation='horizontal',ax=ax2)
         cbar2.set_label('%', fontsize=16)
         cbar2.ax.tick_params(rotation=45)
@@ -559,8 +604,9 @@ def summ_stats(plobject, keys, lev, t0, tf, savename='stats.png',
 
     plt.show()
 
+# %%
 def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
-                     labels, levs=[10,14,18], key='h2o',
+                     name_dict, levs=[10,14,18], key='h2o',
                      save=False,
                      savename='sensitivity_test.png',
                      savepath=None,
@@ -584,17 +630,17 @@ def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
     fig, ax = plt.subplots(1, 3, figsize=(15, 5))
     sens_tests = []
     for i, l in enumerate(levs):
-        times0 = dispersal_time(plume0, lev=l, keys=[key], lats=[49,82], lons=[92,47], axis_len=500,
+        times0 = dispersal_time(plume0, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
                    save=False, plot=False)
-        times1 = dispersal_time(plume1, lev=l, keys=[key], lats=[49,82], lons=[92,47], axis_len=500,
+        times1 = dispersal_time(plume1, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
                    save=False, plot=False)
-        times2 = dispersal_time(plume2, lev=l, keys=[key], lats=[49,82], lons=[92,47], axis_len=500,
+        times2 = dispersal_time(plume2, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
                    save=False, plot=False)
-        times3 = dispersal_time(plume3, lev=l, keys=[key], lats=[49,82], lons=[92,47], axis_len=500,
+        times3 = dispersal_time(plume3, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
                    save=False, plot=False)
-        times4 = dispersal_time(plume4, lev=l, keys=[key], lats=[49,82], lons=[92,47], axis_len=500,
+        times4 = dispersal_time(plume4, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
                    save=False, plot=False)
-        times5 = dispersal_time(plume5, lev=l, keys=[key], lats=[49,82], lons=[92,47], axis_len=500,
+        times5 = dispersal_time(plume5, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
                    save=False, plot=False)
         
         disp_times_eq_hrs = [times0[0]['disp_time_eq_hrs'], times1[0]['disp_time_eq_hrs'], times2[0]['disp_time_eq_hrs'], times3[0]['disp_time_eq_hrs'],
@@ -610,17 +656,85 @@ def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
         ax[i].plot(strengths, disp_times_eq_hrs, marker='o', color='blue', label='Equatorial eruption')
         ax[i].plot(strengths, disp_times_hl_hrs, marker='o', color='green', label='High-latitude eruption')
         ax[i].invert_xaxis()
-        ax[i].set_title(f'{np.round(plume1.heights[l],2)} km', fontsize=16)
+        letter = chr(97 + i)
+        ax[i].set_title(f'{letter}) {np.round(plume1.heights[l],2)} km', fontsize=16)
         ax[i].set_xlabel('Plume scaling factor', fontsize=16)
         ax[i].set_xticks(strengths)
         ax[i].set_ylabel('Dispersal time / hours', fontsize=16)
-        ax[i].legend()
+        ax[i].legend(loc='lower left')
 
-    fig.suptitle(f'Sensitivity test for {labels[key]} plume dispersal time', y=0.99, fontsize=18)
-    plt.subplots_adjust(wspace=0.2, hspace=0.1)
+    fig.suptitle(f'Sensitivity test for {name_dict[key]} plume dispersal time', y=1.01, fontsize=18)
+    plt.subplots_adjust(wspace=0.2, hspace=0.2)
     if save:
         plt.savefig(savepath + savename, format=sformat, bbox_inches='tight')
     else:
         plt.show()
 
     return sens_tests
+
+# %%
+def sensitivity_test_maximum_dispersal(plume5, plume4, plume3, plume2, plume1,
+                     name_dict, levs=[10,14,18], key='h2o',
+                     save=False,
+                     savename='sensitivity_test_max_dispersal.png',
+                     savepath=None,
+                     sformat='png'):
+    """
+    Plot relationship between plume strength and maximum dispersal for H2O for six plumes.
+
+    Args:
+        plume5 (PlumeSim): PlumeSim object for strongest plume.
+        plume4 (PlumeSim): PlumeSim object for 2nd strongest plume.
+        plume3 (PlumeSim): PlumeSim object for 3rd strongest plume.
+        plume2 (PlumeSim): PlumeSim object for 4th strongest plume.
+        plume1 (PlumeSim): PlumeSim object for 5th strongest plume.
+        plume0 (PlumeSim): PlumeSim object for weakest plume.
+        name_dict (dict): Dictionary mapping variable names to display names.
+        levs (list): Vertical level indices. Defaults to [10,14,18].
+        key (str): Dictionary key of the data variable.
+        save (bool): Whether to save the plot. Defaults to False.
+        savename (str): Filename for the saved plot. Defaults to 'sensitivity_test_max_dispersal.png'.
+        savepath (str): Directory path to save the plot. Defaults to None.
+        sformat (str): Format to save the plot. Defaults to 'png'.
+    """
+    fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+    sens_tests = []
+    for i, l in enumerate(levs):
+        #max_disp0 = max_dispersal(plume0, lev=l, lat=70, threshold=1.05)
+        max_disp1 = max_dispersal(plume1, lev=l, lat=70, threshold=1.005)
+        max_disp2 = max_dispersal(plume2, lev=l, lat=70, threshold=1.005)
+        max_disp3 = max_dispersal(plume3, lev=l, lat=70, threshold=1.005)
+        max_disp4 = max_dispersal(plume4, lev=l, lat=70, threshold=1.005)
+        max_disp5 = max_dispersal(plume5, lev=l, lat=70, threshold=1.005)
+        
+        max_disp_eq_hrs = [max_disp1['eq_plume_max'], 
+                           max_disp2['eq_plume_max'], max_disp3['eq_plume_max'],
+                           max_disp4['eq_plume_max'], max_disp5['eq_plume_max']]
+        max_disp_hl_hrs = [max_disp1['hl_plume_max'], 
+                           max_disp2['hl_plume_max'], max_disp3['hl_plume_max'],
+                           max_disp4['hl_plume_max'], max_disp5['hl_plume_max']]
+        strengths = [1.1, 1.2, 1.3, 1.4, 1.5]
+        sens_dict = {'level': l, 'max_disp_eq_hrs': max_disp_eq_hrs,
+                     'max_disp_hl_hrs': max_disp_hl_hrs}
+        sens_tests.append(sens_dict)
+
+        # Plot sensitivity test
+        ax[i].plot(strengths, max_disp_eq_hrs, marker='o', color='blue', label='Equatorial eruption')
+        ax[i].plot(strengths, max_disp_hl_hrs, marker='o', color='green', label='High-latitude eruption')
+        ax[i].invert_xaxis()
+        letter = chr(97 + i)
+        ax[i].set_title(f'{letter}) {np.round(plume1.heights[l],2)} km', fontsize=16)
+        ax[i].set_xlabel('Plume scaling factor', fontsize=16)
+        ax[i].set_xticks(strengths)
+        ax[i].set_ylabel('Maximum dispersal time / hours', fontsize=16)
+        ax[i].legend(loc='lower left')
+
+    fig.suptitle(f'Maximum persistence of {name_dict[key]} enhancements', y=1.01, fontsize=18)
+    plt.subplots_adjust(wspace=0.2, hspace=0.2)
+    if save:
+        plt.savefig(savepath + savename, format=sformat, bbox_inches='tight')
+    else:
+        plt.show()
+
+    return sens_tests
+# %%
