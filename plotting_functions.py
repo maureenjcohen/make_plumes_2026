@@ -205,10 +205,12 @@ def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
     
         if plot==True:
             ax = fig.add_subplot(num_rows, num_cols, position[i])
-            ax.plot(time_axis, data1, color='blue', label=f'Lat {np.round(plobject.lats[lats[0]],2)} deg, {np.round(disp_hours1,2)} hrs')
-            ax.plot(time_axis, data2, color='green', label=f'Lat {np.round(plobject.lats[lats[1]],2)} deg, {np.round(disp_hours2,2)} hrs')
+            ax.plot(time_axis, data1, color='red', label=rf'{np.round(plobject.lats[lats[0]],2)}°N: $\tau_d$={np.round(disp_hours1,2)} h')
+            ax.plot(time_axis, data2, color='blue', label=rf'{np.round(plobject.lats[lats[1]],2)}°N: $\tau_d$={np.round(disp_hours2,2)} h')
             ax.plot(time_axis, np.ones_like(data1)*background_val1*1e6, color='red',
-                    linestyle='dashed', label='Before eruption')
+                    linestyle='dashed')
+            ax.plot(time_axis, np.ones_like(data1)*background_val2*1e6, color='blue',
+                    linestyle='dashed')
             title = name_dict.get(key, key)
             if num_subplots > 1:
                 letter = chr(97 + i)
@@ -701,11 +703,11 @@ def sensitivity_test_maximum_dispersal(plume5, plume4, plume3, plume2, plume1,
     sens_tests = []
     for i, l in enumerate(levs):
         #max_disp0 = max_dispersal(plume0, lev=l, lat=70, threshold=1.05)
-        max_disp1 = max_dispersal(plume1, lev=l, lat=70, threshold=1.005)
-        max_disp2 = max_dispersal(plume2, lev=l, lat=70, threshold=1.005)
-        max_disp3 = max_dispersal(plume3, lev=l, lat=70, threshold=1.005)
-        max_disp4 = max_dispersal(plume4, lev=l, lat=70, threshold=1.005)
-        max_disp5 = max_dispersal(plume5, lev=l, lat=70, threshold=1.005)
+        max_disp1 = max_dispersal(plume1, lev=l, lat=70, threshold=1.05)
+        max_disp2 = max_dispersal(plume2, lev=l, lat=70, threshold=1.05)
+        max_disp3 = max_dispersal(plume3, lev=l, lat=70, threshold=1.05)
+        max_disp4 = max_dispersal(plume4, lev=l, lat=70, threshold=1.05)
+        max_disp5 = max_dispersal(plume5, lev=l, lat=70, threshold=1.05)
         
         max_disp_eq_hrs = [max_disp1['eq_plume_max'], 
                            max_disp2['eq_plume_max'], max_disp3['eq_plume_max'],

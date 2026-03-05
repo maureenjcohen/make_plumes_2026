@@ -130,7 +130,7 @@ def calculate_so2_mass(sim_object, vmr_ppm=0.195):
     return mass_kg
 
 # %%
-def max_dispersal(plobject, lev, lat, threshold=1.005):
+def max_dispersal(plobject, lev, lat, threshold=1.05):
 
     cube = plobject.data['h2o'][:,lev,:,:]
     interval = np.diff(cube.time_counter.values)[0]
