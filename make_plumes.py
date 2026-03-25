@@ -19,7 +19,7 @@ surf = '/exomars/data/internal/working/mc5526/VPCM_age_of_air/surf_96x96x50/Xins
 chem_dir = '/exomars/data/internal/simulations/venus/VPCM_chemistry_withSO2sink_2025/data/'
 chem = [chem_dir + 'Xins4.nc',  chem_dir + 'Xins5.nc', chem_dir + 'Xins6.nc', chem_dir + 'Xins7.nc']
 savedir = '/exomars/projects/mc5526/VPCM_volcanic_plumes/figures/'
-filetype = 'pdf'
+filetype = 'png'
 
 # %%
 # Import packages

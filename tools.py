@@ -99,36 +99,6 @@ def find_plume(plobject, key, lev, threshold):
 
     return start_time, end_time, lat_idx, lon_idx
 
-def calculate_so2_mass(sim_object, vmr_ppm=0.195):
-    """
-    Calculates the mass of SO2 in a rectangular volume.
-    
-    Parameters:
-    sim_object (PlumeSim): PlumeSim object containing the simulation data.
-    vmr_ppm (float): Volume mixing ratio of SO2 in parts per million.
-    
-    Returns:
-    float: Total mass of SO2 in kilograms.
-    """
-    # 1. Constants
-    R = 8.31446      # Ideal gas constant (J / mol*K)
-    M_SO2 = 0.06406   # Molar mass of SO2 in kg/mol
-    
-    # 2. Conversions to SI units
-    area_m2 = sim_object.data['aire'][plume_dict['plume_7']['lat_idx'], plume_dict['plume_7']['lon_idx']] # m2
-    volume_m3 = area_m2 * (sim_object.heights[plume_dict['plume_7']['lev']] * 1000 - sim_object.heights[plume_dict['plume_7']['lev']-1] * 1000)  # m3
-    pressure_pa = sim_object.data['pres'][plume_dict['plume_7']['start_time'], plume_dict['plume_7']['lev'], plume_dict['plume_7']['lat_idx'], plume_dict['plume_7']['lon_idx']] # Pascals
-    
-    # 3. Calculate total moles of gas (n = PV / RT)
-    n_total = (pressure_pa * volume_m3) / (R * sim_object.data['temp'][plume_dict['plume_7']['start_time'], plume_dict['plume_7']['lev'], plume_dict['plume_7']['lat_idx'], plume_dict['plume_7']['lon_idx']])
-    # 4. Calculate moles of SO2
-    n_so2 = n_total * (vmr_ppm/1e6)  # Convert ppm to fraction
-    
-    # 5. Convert moles to mass (kg)
-    mass_kg = (n_so2 * M_SO2)
-    
-    return mass_kg
-
 # %%
 def max_dispersal(plobject, lev, lat, threshold=1.05):
 

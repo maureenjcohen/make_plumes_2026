@@ -248,11 +248,13 @@ def dispersal_map(plobject, lev, keys, name_dict, threshold,
             ``name_dict`` is provided it takes precedence. Defaults to None.
         name_dict (dict, optional): Preferred mapping from variable key to
             pretty name, used exactly like in ``summ_stats``. Defaults to None.
+        threshold (float): Threshold multiplier for background levels.
         save (bool): Whether to save the figure. Defaults to False.
         savename (str): Filename for saved figure. Defaults to
             'dispersal_map.png'.
         savepath (str): Directory to save in. Defaults to None.
         sformat (str): File format (png, pdf, etc). Defaults to 'png'.
+
     """
     if isinstance(keys, str):
         keys = [keys]
@@ -299,6 +301,7 @@ def dispersal_map(plobject, lev, keys, name_dict, threshold,
         cube = plobject.data[key][:,lev,:,:]
         interval = np.diff(cube.time_counter.values)[0]
         background = styles[key]['background']*1e-6*threshold
+        #background = cube[plobject.plumes['plume_1']['start_time']-1,:,:].values*threshold
         post_eruption = cube[plobject.plumes['plume_1']['end_time']:,:,:]
         # Only consider data after plume forcing has finished
         mask = post_eruption.values > background
