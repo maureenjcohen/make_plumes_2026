@@ -84,8 +84,6 @@ if __name__ == "__main__":
     dispersal_map(plume_sim, lev=18, keys=['h2o', 'hcl', 'co', 'ocs'], name_dict=name_dict, threshold=1.05, save=True, savename='fig_map_lev18' + '.' + filetype, sformat=filetype, savepath=savedir)
     # Figure 12: Animation + cover image of H2O, HCl, CO, OCS plumes at 35 km
     animate_chem_plume(plume_sim, lev=18, keys=['h2o', 'hcl', 'co', 'ocs'], name_dict=name_dict, t0=0, tf=500, savepath=savedir, savename='fig_ppm_lev18', snapshot=100)
-    # Figure 13: Animation + cover image of SO2 plume at 70 km
-    #animate_chem_plume(plume_sim, lev=35, keys=['so2'], t0=0, tf=250, qscale=5, savepath=savedir, savename='fig13', snapshot=100)
     
     # Figure 3: Dispersal time of H2O plumes at 8 km
     dispersal_time(plume_sim, lev=10, keys=['h2o'], lats=[49,82], lons=[92,47], 
