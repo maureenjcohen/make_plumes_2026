@@ -5,21 +5,9 @@ Auto-generate plots for 'How long could volcanic plumes persist in the Venus atm
 Usage:
     python make_plumes.py
 
-No inputs required as filepaths are specified in the script.
+No inputs required as filepaths are specified in the config script.
 """
 
-# %% Filepaths
-plumes = '/exomars/data/internal/working/mc5526/VPCM_plumes/Xins1.5nocl.nc'
-sens_tests = ['/exomars/data/internal/working/mc5526/VPCM_plumes/Xins1.4.nc',
-              '/exomars/data/internal/working/mc5526/VPCM_plumes/Xins1.3.nc',
-              '/exomars/data/internal/working/mc5526/VPCM_plumes/Xins1.2.nc',
-              '/exomars/data/internal/working/mc5526/VPCM_plumes/Xins1.1.nc',
-            '/exomars/data/internal/working/mc5526/VPCM_plumes/Xins1.03nocl.nc']
-surf = '/exomars/data/internal/working/mc5526/VPCM_age_of_air/surf_96x96x50/Xins_211to220.nc'
-chem_dir = '/exomars/data/internal/simulations/venus/VPCM_chemistry_withSO2sink_2025/data/'
-chem = [chem_dir + 'Xins4.nc',  chem_dir + 'Xins5.nc', chem_dir + 'Xins6.nc', chem_dir + 'Xins7.nc']
-savedir = '/exomars/projects/mc5526/VPCM_volcanic_plumes/figures/'
-filetype = 'png'
 
 # %%
 # Import packages
@@ -33,6 +21,7 @@ import matplotlib.animation as animation
 from classes import PlumeSim
 from plotting_functions import sensitivity_test_maximum_dispersal, zmage, dispersal_time, dispersal_map, animate_chem_plume, summ_stats, sensitivity_test, plume_cross_section
 from tools import venusdict, plume_dict, name_dict
+from config import *
 
 # %% Main code block
 if __name__ == "__main__":
