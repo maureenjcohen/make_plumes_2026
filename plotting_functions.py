@@ -663,6 +663,7 @@ def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
         strengths = [1.03, 1.1, 1.2, 1.3, 1.4, 1.5]
 
         # --- Maximum dispersal time (five plumes, no 1.03) ---
+       # max_disp0 = max_dispersal(plume0, lev=l, lat=70, threshold=1.03)
         max_disp1 = max_dispersal(plume1, lev=l, lat=70, threshold=1.05)
         max_disp2 = max_dispersal(plume2, lev=l, lat=70, threshold=1.05)
         max_disp3 = max_dispersal(plume3, lev=l, lat=70, threshold=1.05)
@@ -693,8 +694,9 @@ def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
         ax[i].set_xlabel('Plume scaling factor', fontsize=16)
         ax[i].set_xticks(strengths)
         ax[i].set_ylabel('Dispersal time / hours', fontsize=16)
-        if i == 0:
-            ax[i].legend(loc='lower left')
+    handles, labels = ax[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center",
+               bbox_to_anchor=(0.5, 0.02), ncol=4, fontsize=13, frameon=False)
 
     fig.suptitle(f'Sensitivity test for {name_dict[key]} plume dispersal time', y=1.01, fontsize=18)
     plt.subplots_adjust(wspace=0.2, hspace=0.2)

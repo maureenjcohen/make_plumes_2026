@@ -66,6 +66,7 @@ if __name__ == "__main__":
     chem_sim.close()
     del chem_sim
     
+    # %%
     # Create PlumeSim object and load data for plume run
     plume_sim = PlumeSim(venusdict, plume_dict, 'scale_1.5')
     plume_sim.load_file(plumes)
