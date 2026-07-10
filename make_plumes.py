@@ -19,7 +19,7 @@ import matplotlib.animation as animation
 # %%
 # Import local
 from classes import PlumeSim
-from plotting_functions import sensitivity_test_maximum_dispersal, zmage, dispersal_time, dispersal_map, animate_chem_plume, summ_stats, sensitivity_test, plume_cross_section
+from plotting_functions import zmage, dispersal_time, dispersal_map, animate_chem_plume, summ_stats, sensitivity_test, plume_cross_section
 from tools import venusdict, plume_dict, name_dict
 from config import *
 
@@ -121,20 +121,14 @@ if __name__ == "__main__":
     plume0.load_file(sens_tests[4])
     plume0.set_resolution()
 
-    # Figure 13: Sensitivity test for H2O plume dispersal time at three altitudes
+    # Figure 13: Sensitivity test combining plume-gridbox and maximum dispersal
+    # times for H2O plumes at three altitudes
     sens_vals = sensitivity_test(plume5=plume_sim, plume4=plume4, plume3=plume3,
                      plume2=plume2, plume1=plume1, plume0=plume0,
                      name_dict=name_dict, levs=[10,14,18], key='h2o',
                      save=True, savename='fig_sens_test' + '.' + filetype,
                      savepath=savedir, sformat=filetype)
     print(sens_vals)
-
-    # Additional figure: Maximum dispersal times for sensitivity test plumes
-    max_sens_vals = sensitivity_test_maximum_dispersal(plume5=plume_sim, plume4=plume4, plume3=plume3,
-                     plume2=plume2, plume1=plume1,
-                     name_dict=name_dict, levs=[10,14,18], key='h2o',
-                     save=True, savename='fig_sens_test_max' + '.' + filetype,
-                     savepath=savedir, sformat=filetype)
 
     for plume in [plume_sim, plume4, plume3, plume2, plume1]:
         plume.close()

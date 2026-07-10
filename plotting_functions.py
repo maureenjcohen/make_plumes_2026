@@ -617,75 +617,12 @@ def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
                      savepath=None,
                      sformat='png'):
     """
-    Plot relationship between plume strength and dispersal time for H2O for five plumes.
+    Plot plume strength vs. dispersal time for H2O at three altitudes.
 
-    Args:
-        plume5 (PlumeSim): PlumeSim object for strongest plume.
-        plume4 (PlumeSim): PlumeSim object for 2nd strongest plume.
-        plume3 (PlumeSim): PlumeSim object for 3rd strongest plume.
-        plume2 (PlumeSim): PlumeSim object for 4th strongest plume.
-        plume1 (PlumeSim): PlumeSim object for weakest plume.
-        lev (int): Vertical level index.
-        key (str): Dictionary key of the data variable.
-        save (bool): Whether to save the plot. Defaults to False.
-        savename (str): Filename for the saved plot. Defaults to 'sensitivity_test.png'.
-        savepath (str): Directory path to save the plot. Defaults to None.
-        sformat (str): Format to save the plot. Defaults to 'png'.
-    """
-    fig, ax = plt.subplots(1, 3, figsize=(15, 5))
-    sens_tests = []
-    for i, l in enumerate(levs):
-        times0 = dispersal_time(plume0, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
-                   save=False, plot=False)
-        times1 = dispersal_time(plume1, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
-                   save=False, plot=False)
-        times2 = dispersal_time(plume2, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
-                   save=False, plot=False)
-        times3 = dispersal_time(plume3, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
-                   save=False, plot=False)
-        times4 = dispersal_time(plume4, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
-                   save=False, plot=False)
-        times5 = dispersal_time(plume5, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
-                   save=False, plot=False)
-        
-        disp_times_eq_hrs = [times0[0]['disp_time_eq_hrs'], times1[0]['disp_time_eq_hrs'], times2[0]['disp_time_eq_hrs'], times3[0]['disp_time_eq_hrs'],
-                      times4[0]['disp_time_eq_hrs'], times5[0]['disp_time_eq_hrs']]
-        disp_times_hl_hrs = [times0[0]['disp_time_hl_hrs'], times1[0]['disp_time_hl_hrs'], times2[0]['disp_time_hl_hrs'], times3[0]['disp_time_hl_hrs'],
-                      times4[0]['disp_time_hl_hrs'], times5[0]['disp_time_hl_hrs']]
-        strengths = [1.03, 1.1, 1.2, 1.3, 1.4, 1.5]
-        sens_dict = {'level': l, 'disp_times_eq_hrs': disp_times_eq_hrs,
-                     'disp_times_hl_hrs': disp_times_hl_hrs}
-        sens_tests.append(sens_dict)
-
-        # Plot sensitivity test
-        ax[i].plot(strengths, disp_times_eq_hrs, marker='o', color='blue', label='Equatorial eruption')
-        ax[i].plot(strengths, disp_times_hl_hrs, marker='o', color='green', label='High-latitude eruption')
-        ax[i].invert_xaxis()
-        letter = chr(97 + i)
-        ax[i].set_title(f'{letter}) {np.round(plume1.heights[l],2)} km', fontsize=16)
-        ax[i].set_xlabel('Plume scaling factor', fontsize=16)
-        ax[i].set_xticks(strengths)
-        ax[i].set_ylabel('Dispersal time / hours', fontsize=16)
-        ax[i].legend(loc='lower left')
-
-    fig.suptitle(f'Sensitivity test for {name_dict[key]} plume dispersal time', y=1.01, fontsize=18)
-    plt.subplots_adjust(wspace=0.2, hspace=0.2)
-    if save:
-        plt.savefig(savepath + savename, format=sformat, bbox_inches='tight')
-    else:
-        plt.show()
-
-    return sens_tests
-
-# %%
-def sensitivity_test_maximum_dispersal(plume5, plume4, plume3, plume2, plume1,
-                     name_dict, levs=[10,14,18], key='h2o',
-                     save=False,
-                     savename='sensitivity_test_max_dispersal.png',
-                     savepath=None,
-                     sformat='png'):
-    """
-    Plot relationship between plume strength and maximum dispersal for H2O for six plumes.
+    Each subplot shows, for both an equatorial and a high-latitude eruption:
+      - dispersal time at the plume gridbox (solid lines, six plumes incl. 1.03)
+      - maximum dispersal time anywhere in the hemisphere (dashed lines, five
+        plumes; 1.03 is not computed for the maximum)
 
     Args:
         plume5 (PlumeSim): PlumeSim object for strongest plume.
@@ -698,43 +635,68 @@ def sensitivity_test_maximum_dispersal(plume5, plume4, plume3, plume2, plume1,
         levs (list): Vertical level indices. Defaults to [10,14,18].
         key (str): Dictionary key of the data variable.
         save (bool): Whether to save the plot. Defaults to False.
-        savename (str): Filename for the saved plot. Defaults to 'sensitivity_test_max_dispersal.png'.
+        savename (str): Filename for the saved plot. Defaults to 'sensitivity_test.png'.
         savepath (str): Directory path to save the plot. Defaults to None.
         sformat (str): Format to save the plot. Defaults to 'png'.
     """
     fig, ax = plt.subplots(1, 3, figsize=(15, 5))
     sens_tests = []
     for i, l in enumerate(levs):
-        #max_disp0 = max_dispersal(plume0, lev=l, lat=70, threshold=1.05)
+        # --- Dispersal time at the plume gridbox (six plumes, incl. 1.03) ---
+        times0 = dispersal_time(plume0, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
+                   save=False, plot=False)
+        times1 = dispersal_time(plume1, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
+                   save=False, plot=False)
+        times2 = dispersal_time(plume2, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
+                   save=False, plot=False)
+        times3 = dispersal_time(plume3, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
+                   save=False, plot=False)
+        times4 = dispersal_time(plume4, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
+                   save=False, plot=False)
+        times5 = dispersal_time(plume5, lev=l, keys=[key], name_dict=name_dict, threshold=1.005, lats=[49,82], lons=[92,47], axis_len=500,
+                   save=False, plot=False)
+
+        disp_times_eq_hrs = [times0[0]['disp_time_eq_hrs'], times1[0]['disp_time_eq_hrs'], times2[0]['disp_time_eq_hrs'], times3[0]['disp_time_eq_hrs'],
+                      times4[0]['disp_time_eq_hrs'], times5[0]['disp_time_eq_hrs']]
+        disp_times_hl_hrs = [times0[0]['disp_time_hl_hrs'], times1[0]['disp_time_hl_hrs'], times2[0]['disp_time_hl_hrs'], times3[0]['disp_time_hl_hrs'],
+                      times4[0]['disp_time_hl_hrs'], times5[0]['disp_time_hl_hrs']]
+        strengths = [1.03, 1.1, 1.2, 1.3, 1.4, 1.5]
+
+        # --- Maximum dispersal time (five plumes, no 1.03) ---
         max_disp1 = max_dispersal(plume1, lev=l, lat=70, threshold=1.05)
         max_disp2 = max_dispersal(plume2, lev=l, lat=70, threshold=1.05)
         max_disp3 = max_dispersal(plume3, lev=l, lat=70, threshold=1.05)
         max_disp4 = max_dispersal(plume4, lev=l, lat=70, threshold=1.05)
         max_disp5 = max_dispersal(plume5, lev=l, lat=70, threshold=1.05)
-        
-        max_disp_eq_hrs = [max_disp1['eq_plume_max'], 
-                           max_disp2['eq_plume_max'], max_disp3['eq_plume_max'],
+
+        max_disp_eq_hrs = [max_disp1['eq_plume_max'], max_disp2['eq_plume_max'], max_disp3['eq_plume_max'],
                            max_disp4['eq_plume_max'], max_disp5['eq_plume_max']]
-        max_disp_hl_hrs = [max_disp1['hl_plume_max'], 
-                           max_disp2['hl_plume_max'], max_disp3['hl_plume_max'],
+        max_disp_hl_hrs = [max_disp1['hl_plume_max'], max_disp2['hl_plume_max'], max_disp3['hl_plume_max'],
                            max_disp4['hl_plume_max'], max_disp5['hl_plume_max']]
-        strengths = [1.1, 1.2, 1.3, 1.4, 1.5]
-        sens_dict = {'level': l, 'max_disp_eq_hrs': max_disp_eq_hrs,
-                     'max_disp_hl_hrs': max_disp_hl_hrs}
+        max_strengths = [1.1, 1.2, 1.3, 1.4, 1.5]
+
+        sens_dict = {'level': l,
+                     'disp_times_eq_hrs': disp_times_eq_hrs, 'disp_times_hl_hrs': disp_times_hl_hrs,
+                     'max_disp_eq_hrs': max_disp_eq_hrs, 'max_disp_hl_hrs': max_disp_hl_hrs}
         sens_tests.append(sens_dict)
 
-        # Plot sensitivity test
-        ax[i].plot(strengths, max_disp_eq_hrs, marker='o', color='blue', label='Equatorial eruption')
-        ax[i].plot(strengths, max_disp_hl_hrs, marker='o', color='green', label='High-latitude eruption')
+        # Plume-gridbox dispersal time (solid lines)
+        ax[i].plot(strengths, disp_times_eq_hrs, marker='o', color='blue', label='Equatorial, plume gridbox')
+        ax[i].plot(strengths, disp_times_hl_hrs, marker='o', color='green', label='High-latitude, plume gridbox')
+        # Maximum dispersal time (dashed lines)
+        ax[i].plot(max_strengths, max_disp_eq_hrs, marker='o', linestyle='--', color='blue', label='Equatorial, maximum')
+        ax[i].plot(max_strengths, max_disp_hl_hrs, marker='o', linestyle='--', color='green', label='High-latitude, maximum')
+
         ax[i].invert_xaxis()
         letter = chr(97 + i)
         ax[i].set_title(f'{letter}) {np.round(plume1.heights[l],2)} km', fontsize=16)
         ax[i].set_xlabel('Plume scaling factor', fontsize=16)
         ax[i].set_xticks(strengths)
-        ax[i].set_ylabel('Maximum dispersal time / hours', fontsize=16)
-        ax[i].legend(loc='lower left')
+        ax[i].set_ylabel('Dispersal time / hours', fontsize=16)
+        if i == 0:
+            ax[i].legend(loc='lower left')
 
-    fig.suptitle(f'Maximum persistence of {name_dict[key]} enhancements', y=1.01, fontsize=18)
+    fig.suptitle(f'Sensitivity test for {name_dict[key]} plume dispersal time', y=1.01, fontsize=18)
     plt.subplots_adjust(wspace=0.2, hspace=0.2)
     if save:
         plt.savefig(savepath + savename, format=sformat, bbox_inches='tight')
