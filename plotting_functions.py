@@ -725,3 +725,75 @@ def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
 
     return sens_tests
 # %%
+def plume_impact(plobject, lev=18, keys=['co', 'ocs'], name_dict=None,
+                 t0=0, tf=None, save=False, savename='plume_impact.png',
+                 savepath=None, sformat='png'):
+    """
+    Show whether injecting the chemically active species CO and OCS perturbs
+    the global chemical network.
+
+    For each species, the global area-weighted mean volume mixing ratio at the
+    given altitude is plotted against time. Vertical dashed lines mark the
+    start and end of the plume injection, so any departure from the background
+    trend during or after the injection is visible.
+
+    Args:
+        plobject (PlumeSim): PlumeSim object containing the data.
+        lev (int): Vertical level index. Defaults to 18 (35.45 km).
+        keys (list): Data variable keys to plot. Defaults to ['co', 'ocs'].
+        name_dict (dict, optional): Mapping from variable key to pretty name.
+        t0 (int): Start time index. Defaults to 0.
+        tf (int): End time index (exclusive). Defaults to None (all times).
+        save (bool): Whether to save the plot. Defaults to False.
+        savename (str): Filename for the saved plot. Defaults to 'plume_impact.png'.
+        savepath (str): Directory path to save the plot. Defaults to None.
+        sformat (str): Format to save the plot. Defaults to 'png'.
+    """
+    if isinstance(keys, str):
+        keys = [keys]
+
+    # Line colour per species, matching the animation colour scheme
+    colours = {'co': 'purple', 'ocs': 'green'}
+
+    # Area weights (lon-lat) for the global mean
+    weights = plobject.data['aire']
+
+    # Time step in seconds and the corresponding time axis in hours
+    interval = np.diff(plobject.data.time_counter.values)[0]
+    height = np.round(plobject.heights[lev], 2)
+
+    # Injection start/stop times (indices) converted to hours for the markers.
+    # All plumes share the same forcing window; use the level-18 plume.
+    start_hrs = plobject.plumes['plume_5']['start_time'] * interval / (60*60)
+    stop_hrs = plobject.plumes['plume_5']['end_time'] * interval / (60*60)
+
+    fig, axes = plt.subplots(1, len(keys), figsize=(6*len(keys), 5),
+                             sharex=True, tight_layout=True)
+    axes = np.atleast_1d(axes)
+
+    for i, key in enumerate(keys):
+        ax = axes[i]
+        # Global area-weighted mean at the chosen level, in ppm
+        cube = plobject.data[key][t0:tf, lev, :, :] * 1e6
+        horizontal_dims = [d for d in cube.dims if d != 'time_counter']
+        gmean = cube.weighted(weights).mean(dim=horizontal_dims)
+
+        time_hrs = np.arange(t0, t0 + cube.shape[0]) * interval / (60*60)
+
+        species = name_dict[key] if name_dict is not None and key in name_dict else key
+        ax.plot(time_hrs, gmean, color=colours.get(key, 'black'), label=f'Global mean {species}')
+        ax.axvline(start_hrs, color='grey', linestyle='dashed', label='Injection start')
+        ax.axvline(stop_hrs, color='grey', linestyle='dotted', label='Injection stop')
+
+        letter = chr(97 + i)
+        ax.set_title(f'{letter}) {species}', fontsize=16)
+        ax.set_xlabel('Time / hours', fontsize=16)
+        ax.set_ylabel(f'{species} vmr / ppm', fontsize=16)
+        ax.legend(loc='best')
+
+    fig.suptitle(f'Global impact of plume injection at {height} km', y=1.02, fontsize=18)
+    if save:
+        plt.savefig(savepath + savename, format=sformat, bbox_inches='tight')
+    else:
+        plt.show()
+# %%
