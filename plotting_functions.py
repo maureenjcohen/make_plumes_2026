@@ -780,7 +780,7 @@ def plume_impact(plobject, lev=18, keys=['co', 'ocs'], name_dict=None,
 
         time_hrs = np.arange(t0, t0 + cube.shape[0]) * interval / (60*60)
 
-        species = name_dict[key] if name_dict is not None and key in name_dict else key
+        species = name_dict[key].upper() if name_dict is not None and key in name_dict else key.upper()
         ax.plot(time_hrs, gmean, color=colours.get(key, 'black'), label=f'Global mean {species}')
         ax.axvline(start_hrs, color='grey', linestyle='dashed', label='Injection start')
         ax.axvline(stop_hrs, color='grey', linestyle='dotted', label='Injection stop')
