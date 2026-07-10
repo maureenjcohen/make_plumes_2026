@@ -356,9 +356,10 @@ def dispersal_map(plobject, lev, keys, name_dict, threshold,
 
 # %%
 def animate_chem_plume(plobject, lev, keys, name_dict, t0, tf, n=4, qscale=1,
-                  savename='test.png', savepath=None, snapshot=None):
+                  savename='test.png', savepath=None, snapshot=None,
+                  make_animation=True):
     """
-    Create an animation of a chemical plume.
+    Create an animation of a chemical plume, optionally with a still snapshot.
 
     Args:
         plobject (PlumeSim): PlumeSim class object containing the data.
@@ -370,7 +371,12 @@ def animate_chem_plume(plobject, lev, keys, name_dict, t0, tf, n=4, qscale=1,
         qscale (float): Scale for quiver plot. Defaults to 1.
         savepath (str): Directory path to save the output. Defaults to None.
         snapshot (int): Frame to save as a still image. Defaults to None.
+        make_animation (bool): Whether to render and save the mp4 animation.
+            Defaults to True. Set to False to save only the snapshot still
+            (requires snapshot to be set), skipping the expensive mp4 encoding.
     """
+    if not make_animation and snapshot is None:
+        raise ValueError("snapshot must be set when make_animation is False")
     # Get height in km rounded to 2 decimal points (for title)
     height = np.round(plobject.heights[lev],2)
     
@@ -484,9 +490,6 @@ def animate_chem_plume(plobject, lev, keys, name_dict, t0, tf, n=4, qscale=1,
             else:
                 fig.savefig(f'{savename}_snapshot_{frame}.pdf', bbox_inches='tight')
 
-    # Create the animation
-    ani = animation.FuncAnimation(fig, animate, frames=range(0,tf-t0), interval=200, repeat=False)
-    
     # Add colorbars (based on first frame of plume)
     for i, key in enumerate(keys):
         ax = axes[i]
@@ -512,9 +515,18 @@ def animate_chem_plume(plobject, lev, keys, name_dict, t0, tf, n=4, qscale=1,
     for i in range(num_subplots, len(axes)):
         fig.delaxes(axes[i])
 
-    # Save the animation as an mp4 file
-    ani.save(savepath + f'{savename}.mp4', writer='ffmpeg')
-    # ani.save('myanimation.gif', writer='pillow') #alternative
+    if make_animation:
+        # Render the full animation; the snapshot (if set) is saved by
+        # animate() when it reaches the matching frame.
+        ani = animation.FuncAnimation(fig, animate, frames=range(0,tf-t0), interval=200, repeat=False)
+        # Save the animation as an mp4 file
+        ani.save(savepath + f'{savename}.mp4', writer='ffmpeg')
+        # ani.save('myanimation.gif', writer='pillow') #alternative
+    else:
+        # Snapshot only: render just the requested frame and let animate()
+        # save the still, skipping the mp4 encoding.
+        animate(snapshot)
+        plt.close(fig)
 
 # %%
 def summ_stats(plobject, keys, lev, t0, tf, name_dict=None, savename='stats.png',
