@@ -151,19 +151,16 @@ def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
     num_subplots = len(keys)
     if num_subplots == 1:
         num_cols, num_rows = 1, 1
-        # Single-panel figure (e.g. Fig. 3): sized for the journal's figure
-        # spec (width 10-15 cm, max height 22 cm, min 150 dpi). 5.5 in =
-        # 13.97 cm; at 150 dpi that is 825 px, within the 590-890 px width.
+        # Single-panel figure (e.g. Fig. 3): enlarged relative to the
+        # multi-panel per-axis size. Printed dimensions are set by the
+        # \includegraphics scaling in the manuscript.
         figsize = (5.5, 5.5)
-        save_dpi = 150
     elif num_subplots == 2:
         num_cols, num_rows = 2, 1
         figsize = (num_cols*4, num_rows*4)
-        save_dpi = None
     elif num_subplots == 4:
         num_cols, num_rows = 2, 2
         figsize = (num_cols*4, num_rows*4)
-        save_dpi = None
 
     position = range(1, num_subplots+1)
     interval = np.diff(plobject.data.time_counter.values)[0]
@@ -234,7 +231,7 @@ def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
         plt.subplots_adjust(wspace=0.3, hspace=0.3)
 
     if save:
-        plt.savefig(savepath + savename, format=sformat, bbox_inches='tight', dpi=save_dpi)
+        plt.savefig(savepath + savename, format=sformat, bbox_inches='tight')
 
     if plot==True:
         plt.show()
