@@ -628,8 +628,8 @@ def summ_stats(plobject, keys, lev, t0, tf, name_dict=None, savename='stats.png'
 # %%
 def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
                      name_dict, levs=[10,14,18], key='h2o',
-                     pre_eruption_bg=False,
-                     save=False,
+                     pre_eruption_bg=True,
+                     save=True,
                      savename='sensitivity_test.png',
                      savepath=None,
                      sformat='png'):
@@ -730,7 +730,7 @@ def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
 # %%
 def time_test(plumes, durations, name_dict, levs=[10,14,18], key='h2o',
               lats=[49,82], lons=[92,47], threshold=1.005,
-              max_threshold=1.05, max_lat=70, pre_eruption_bg=False,
+              max_threshold=1.05, max_lat=70, pre_eruption_bg=True,
               axis_len=None, logx=False,
               save=False,
               savename='time_test.png',
