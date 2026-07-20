@@ -14,6 +14,12 @@ sens_tests = [
     os.getenv('SENS_TEST_4'),
     os.getenv('SENS_TEST_5'),
 ]
+time_tests = [
+    os.getenv('TIME_TEST_1'),
+    os.getenv('TIME_TEST_2'),
+    os.getenv('TIME_TEST_3'),
+    os.getenv('TIME_TEST_4'),
+]
 surf = os.getenv('SURF')
 chem_dir = os.getenv('CHEM_DIR')
 chem = [
