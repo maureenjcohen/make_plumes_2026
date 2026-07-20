@@ -120,14 +120,67 @@ def find_plume(plobject, key, lev, threshold):
     return start_time, end_time, lat_idx, lon_idx
 
 # %%
-def max_dispersal(plobject, lev, lat, threshold=1.05):
+def count_above(series, start, background):
+    """
+    Count how many consecutive values exceed the background, starting at start.
 
-    cube = plobject.data['h2o'][:,lev,:,:]
-    interval = np.diff(cube.time_counter.values)[0]
-    background = np.mean(cube.values)*threshold
+    Vectorised equivalent of stepping through the timeseries until the tracer
+    drops back to the background value.
+
+    Args:
+        series (np.ndarray): 1D timeseries of tracer values.
+        start (int): Index to start counting from, i.e. end of plume forcing.
+        background (float): Background value the tracer decays back to.
+
+    Returns:
+        int: Number of time steps continuously above background.
+    """
+    above = series[start:] > background
+    if above.all():
+        # Never returns to background within the simulation
+        return above.size
+    # First False is the number of leading True values
+    return int(np.argmin(above))
+
+# %%
+def max_dispersal(plobject, lev, lat, threshold=1.05, cube=None,
+                  pre_eruption_bg=False):
+    """
+    Find the longest dispersal time anywhere in each hemisphere.
+
+    Args:
+        plobject (PlumeSim): PlumeSim object containing the data.
+        lev (int): Vertical level index.
+        lat (int): Latitude index dividing the two hemispheres.
+        threshold (float): Multiple of the background value defining the plume.
+        cube (np.ndarray, optional): Pre-loaded (time, lat, lon) array for this
+            level. Saves re-reading the file when calling this repeatedly.
+        pre_eruption_bg (bool): If True, take the background from the outputs
+            before the injection starts instead of from the whole time series.
+            The whole-series mean includes the injection itself, so runs with
+            longer or stronger injections set themselves a higher threshold,
+            which biases comparisons between them. Defaults to False, which
+            reproduces the original behaviour.
+
+    Returns:
+        dict: Maximum dispersal time and its coordinates in each hemisphere.
+    """
+    interval = np.diff(plobject.data['time_counter'].values)[0]
+    if cube is None:
+        # Read once: the mean and the mask below would otherwise each
+        # trigger a full pass over the file
+        cube = plobject.data['h2o'][:,lev,:,:].values
+    if pre_eruption_bg:
+        start_time = plobject.plumes['plume_1']['start_time']
+        if start_time < 1:
+            raise ValueError('No outputs before the injection starts, '
+                             'cannot use pre_eruption_bg')
+        background = np.mean(cube[:start_time,:,:])*threshold
+    else:
+        background = np.mean(cube)*threshold
     post_eruption = cube[plobject.plumes['plume_1']['end_time']:,:,:]
     # Only consider data after plume forcing has finished
-    mask = post_eruption.values > background
+    mask = post_eruption > background
     # Boolean array with same dimension as cube, True is where values are above threshold
     flattened = np.count_nonzero(mask, axis=0)
     # Count how many time outputs are True for each lon x lat point

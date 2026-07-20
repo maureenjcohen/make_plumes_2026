@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-from tools import plume_dict, max_dispersal
+from tools import plume_dict, max_dispersal, count_above
 
 # %%
 def zmage(plobject, hmin=0, hmax=None, time_slice=-1, convert2yr=True,
@@ -128,7 +128,7 @@ def plume_cross_section(plobject, key, lev, times=[54,104,174],
 
 # %%
 def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
-                   axis_len=500, save=False, plot=True,
+                   axis_len=500, cube=None, save=False, plot=True,
                    savename='plume_dispersal.png',
                    savepath=None,
                    sformat='png'):
@@ -140,6 +140,8 @@ def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
         key (str): Dictionary key of the data variable.
         lev (int): Vertical level index.
         threshold (float or None): Threshold value for defining the plume.
+        cube (np.ndarray, optional): Pre-loaded (time, lat, lon) array for this
+            level, to avoid re-reading the file. Only valid for a single key.
         save (bool): Whether to save the plot. Defaults to False.
         savename (str): Filename for the saved plot. Defaults to 'plume_dispersal.png'.
         savepath (str): Directory path to save the plot. Defaults to None.
@@ -149,6 +151,8 @@ def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
     if isinstance(keys, str):
         keys = [keys]
     num_subplots = len(keys)
+    if cube is not None and num_subplots > 1:
+        raise ValueError('A pre-loaded cube can only be used with a single key')
     if num_subplots == 1:
         num_cols, num_rows = 1, 1
         # Single-panel figure (e.g. Fig. 3): enlarged relative to the
@@ -171,30 +175,24 @@ def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
 
     disp_times = []
     for i, key in enumerate(keys):
-        series1 = plobject.data[key][:,lev,lats[0],lons[0]]
-        series2 = plobject.data[key][:,lev,lats[1],lons[1]]
+        # Read the two gridbox timeseries into memory in one go. Indexing the
+        # DataArray inside the loop below instead triggers one file read per
+        # timestep, which dominates the runtime for long simulations.
+        if cube is not None:
+            series1 = cube[:,lats[0],lons[0]]
+            series2 = cube[:,lats[1],lons[1]]
+        else:
+            series1 = plobject.data[key][:,lev,lats[0],lons[0]].values
+            series2 = plobject.data[key][:,lev,lats[1],lons[1]].values
         # Get background value of tracer before plume starts
-        background_val1 = series1[plobject.plumes['plume_1']['start_time']-1].values*threshold
-        background_val2 = series2[plobject.plumes['plume_2']['start_time']-1].values*threshold
-    
-        counter1 = 0
-        for t in range(plobject.plumes['plume_1']['end_time'], series1.shape[0]):
-            if series1[t].values > background_val1:
-                # Count how many time steps tracer value remains above background
-                counter1 = counter1 + 1
-            else:
-                # Stop loop when tracer returns to background
-                break
+        background_val1 = series1[plobject.plumes['plume_1']['start_time']-1]*threshold
+        background_val2 = series2[plobject.plumes['plume_2']['start_time']-1]*threshold
 
-        counter2 = 0
-        for t in range(plobject.plumes['plume_1']['end_time'], series2.shape[0]):
-            if series2[t].values > background_val2:
-                # Count how many time steps tracer value remains above background
-                counter2 = counter2 + 1
-            else:
-                # Stop loop when tracer returns to background
-                break
-        
+        # Count how many time steps the tracer value remains continuously
+        # above background, starting from the end of the plume forcing
+        counter1 = count_above(series1, plobject.plumes['plume_1']['end_time'], background_val1)
+        counter2 = count_above(series2, plobject.plumes['plume_1']['end_time'], background_val2)
+
         # Total time in seconds until tracer valuer returns to background
         disp_time1 = counter1 * interval
         disp_time2 = counter2 * interval
@@ -630,6 +628,7 @@ def summ_stats(plobject, keys, lev, t0, tf, name_dict=None, savename='stats.png'
 # %%
 def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
                      name_dict, levs=[10,14,18], key='h2o',
+                     pre_eruption_bg=False,
                      save=False,
                      savename='sensitivity_test.png',
                      savepath=None,
@@ -652,6 +651,10 @@ def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
         name_dict (dict): Dictionary mapping variable names to display names.
         levs (list): Vertical level indices. Defaults to [10,14,18].
         key (str): Dictionary key of the data variable.
+        pre_eruption_bg (bool): Whether to take the background for the maximum
+            dispersal time from before the injection starts, rather than from
+            the whole time series. Defaults to False, i.e. the published
+            behaviour. See max_dispersal.
         save (bool): Whether to save the plot. Defaults to False.
         savename (str): Filename for the saved plot. Defaults to 'sensitivity_test.png'.
         savepath (str): Directory path to save the plot. Defaults to None.
@@ -682,11 +685,11 @@ def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
 
         # --- Maximum dispersal time (five plumes, no 1.03) ---
        # max_disp0 = max_dispersal(plume0, lev=l, lat=70, threshold=1.03)
-        max_disp1 = max_dispersal(plume1, lev=l, lat=70, threshold=1.05)
-        max_disp2 = max_dispersal(plume2, lev=l, lat=70, threshold=1.05)
-        max_disp3 = max_dispersal(plume3, lev=l, lat=70, threshold=1.05)
-        max_disp4 = max_dispersal(plume4, lev=l, lat=70, threshold=1.05)
-        max_disp5 = max_dispersal(plume5, lev=l, lat=70, threshold=1.05)
+        max_disp1 = max_dispersal(plume1, lev=l, lat=70, threshold=1.05, pre_eruption_bg=pre_eruption_bg)
+        max_disp2 = max_dispersal(plume2, lev=l, lat=70, threshold=1.05, pre_eruption_bg=pre_eruption_bg)
+        max_disp3 = max_dispersal(plume3, lev=l, lat=70, threshold=1.05, pre_eruption_bg=pre_eruption_bg)
+        max_disp4 = max_dispersal(plume4, lev=l, lat=70, threshold=1.05, pre_eruption_bg=pre_eruption_bg)
+        max_disp5 = max_dispersal(plume5, lev=l, lat=70, threshold=1.05, pre_eruption_bg=pre_eruption_bg)
 
         max_disp_eq_hrs = [max_disp1['eq_plume_max'], max_disp2['eq_plume_max'], max_disp3['eq_plume_max'],
                            max_disp4['eq_plume_max'], max_disp5['eq_plume_max']]
@@ -727,7 +730,8 @@ def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
 # %%
 def time_test(plumes, durations, name_dict, levs=[10,14,18], key='h2o',
               lats=[49,82], lons=[92,47], threshold=1.005,
-              max_threshold=1.05, max_lat=70, axis_len=None, logx=False,
+              max_threshold=1.05, max_lat=70, pre_eruption_bg=False,
+              axis_len=None, logx=False,
               save=False,
               savename='time_test.png',
               savepath=None,
@@ -756,6 +760,10 @@ def time_test(plumes, durations, name_dict, levs=[10,14,18], key='h2o',
         threshold (float): Threshold for the plume gridbox dispersal time.
         max_threshold (float): Threshold for the hemispheric maximum dispersal time.
         max_lat (int): Latitude index dividing the two hemispheres.
+        pre_eruption_bg (bool): Whether to take the background for the maximum
+            dispersal time from before the injection starts, rather than from
+            the whole time series. Recommended here, because the runs being
+            compared inject for different lengths of time. Defaults to False.
         axis_len (int): Number of time outputs to consider. Defaults to None,
             which uses all the outputs in each file.
         logx (bool): Whether to use a log scale for the duration axis. Useful
@@ -774,6 +782,8 @@ def time_test(plumes, durations, name_dict, levs=[10,14,18], key='h2o',
     durations = [durations[i] for i in order]
 
     fig, ax = plt.subplots(1, len(levs), figsize=(5*len(levs), 5))
+    # A single level gives a bare Axes rather than an array
+    ax = np.atleast_1d(ax)
     time_tests = []
     for i, l in enumerate(levs):
         disp_times_eq_hrs, disp_times_hl_hrs = [], []
@@ -782,16 +792,22 @@ def time_test(plumes, durations, name_dict, levs=[10,14,18], key='h2o',
             # Number of time outputs in this file, unless the caller has
             # asked for a shorter window
             alen = axis_len if axis_len is not None else plume.data[key].shape[0]
+            # These files are large, so read this level once and hand the same
+            # array to both calculations rather than letting each re-read it
+            cube = plume.data[key][:,l,:,:].values
             # --- Dispersal time at the plume gridbox ---
             times = dispersal_time(plume, lev=l, keys=[key], name_dict=name_dict,
                                    threshold=threshold, lats=lats, lons=lons,
-                                   axis_len=alen, save=False, plot=False)
+                                   axis_len=alen, cube=cube, save=False, plot=False)
             disp_times_eq_hrs.append(times[0]['disp_time_eq_hrs'])
             disp_times_hl_hrs.append(times[0]['disp_time_hl_hrs'])
             # --- Maximum dispersal time anywhere in the hemisphere ---
-            max_disp = max_dispersal(plume, lev=l, lat=max_lat, threshold=max_threshold)
+            max_disp = max_dispersal(plume, lev=l, lat=max_lat,
+                                     threshold=max_threshold, cube=cube,
+                                     pre_eruption_bg=pre_eruption_bg)
             max_disp_eq_hrs.append(max_disp['eq_plume_max'])
             max_disp_hl_hrs.append(max_disp['hl_plume_max'])
+            del cube
 
         time_dict = {'level': l, 'durations': durations,
                      'disp_times_eq_hrs': disp_times_eq_hrs, 'disp_times_hl_hrs': disp_times_hl_hrs,
