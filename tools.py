@@ -58,24 +58,18 @@ plume_dict = {  'plume_1': {'name': 'h2o_lev10_eq', 'lev': 10, 'lat_idx': 49, 'l
                 'plume_6': {'name': 'four_gases_lev18_hl', 'lev': 18, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 127}
             }
 # Dictionary of plume coordinates for the injection duration sensitivity tests.
-# Each entry has the same structure as plume_dict, because the plotting
-# functions read the eruption coordinates and timing off plobject.plumes
-# under the keys 'plume_1' (equatorial) and 'plume_2' (high latitude).
-# 'duration' is the length of the plume injection in hours.
-# NOTE: end_time must be the index of the last *netCDF output* in which the
-# forcing is active, not the last physics timestep.
 time_test_dict = { 'time_test_1': {'duration': 6,
-                                   'plume_1': {'name': 'h2o_lev10_eq_6hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 112},
-                                   'plume_2': {'name': 'h2o_lev10_hl_6hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 112}},
+                                   'plume_1': {'name': 'h2o_lev10_eq_6hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 28},
+                                   'plume_2': {'name': 'h2o_lev10_hl_6hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 28}},
                    'time_test_2': {'duration': 12,
-                                   'plume_1': {'name': 'h2o_lev10_eq_12hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 220},
-                                   'plume_2': {'name': 'h2o_lev10_hl_12hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 220}},
+                                   'plume_1': {'name': 'h2o_lev10_eq_12hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 55},
+                                   'plume_2': {'name': 'h2o_lev10_hl_12hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 55}},
                    'time_test_3': {'duration': 36,
-                                   'plume_1': {'name': 'h2o_lev10_eq_36hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 652},
-                                   'plume_2': {'name': 'h2o_lev10_hl_36hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 652}},
+                                   'plume_1': {'name': 'h2o_lev10_eq_36hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 163},
+                                   'plume_2': {'name': 'h2o_lev10_hl_36hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 163}},
                    'time_test_4': {'duration': 120,
-                                   'plume_1': {'name': 'h2o_lev10_eq_120hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 2164},
-                                   'plume_2': {'name': 'h2o_lev10_hl_120hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 2164}}
+                                   'plume_1': {'name': 'h2o_lev10_eq_120hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 541},
+                                   'plume_2': {'name': 'h2o_lev10_hl_120hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 541}}
                 }
 # The default 28 hour injection is the main set of runs, described by plume_dict
 default_duration = 28
@@ -170,14 +164,17 @@ def max_dispersal(plobject, lev, lat, threshold=1.05, cube=None,
         # Read once: the mean and the mask below would otherwise each
         # trigger a full pass over the file
         cube = plobject.data['h2o'][:,lev,:,:].values
+    area_weights = plobject.data['aire'].values
     if pre_eruption_bg:
         start_time = plobject.plumes['plume_1']['start_time']
         if start_time < 1:
             raise ValueError('No outputs before the injection starts, '
                              'cannot use pre_eruption_bg')
-        background = np.mean(cube[:start_time,:,:])*threshold
+        wghtd_mean = cube[:start_time,:,:]*area_weights / np.sum(area_weights)
+        background = wghtd_mean*threshold
     else:
-        background = np.mean(cube)*threshold
+        wghtd_mean = cube*area_weights / np.sum(area_weights)
+        background = wghtd_mean*threshold
     post_eruption = cube[plobject.plumes['plume_1']['end_time']:,:,:]
     # Only consider data after plume forcing has finished
     mask = post_eruption > background
