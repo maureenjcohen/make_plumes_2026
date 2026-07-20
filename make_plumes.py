@@ -19,8 +19,8 @@ import matplotlib.animation as animation
 # %%
 # Import local
 from classes import PlumeSim
-from plotting_functions import zmage, dispersal_time, dispersal_map, animate_chem_plume, summ_stats, sensitivity_test, plume_cross_section
-from tools import venusdict, plume_dict, name_dict
+from plotting_functions import zmage, dispersal_time, dispersal_map, animate_chem_plume, summ_stats, sensitivity_test, time_test, plume_cross_section
+from tools import venusdict, plume_dict, time_test_dict, default_duration, name_dict
 from config import *
 
 # %% Main code block
@@ -140,7 +140,30 @@ if __name__ == "__main__":
                      savepath=savedir, sformat=filetype)
     print(sens_vals)
 
-    for plume in [plume_sim, plume4, plume3, plume2, plume1]:
+    for plume in [plume4, plume3, plume2, plume1, plume0]:
+        plume.close()
+        del plume
+
+    # Injection duration sensitivity tests. Each run gets its own plume
+    # coordinate dictionary, because the dispersal time is measured from the
+    # end of the injection and that differs between these runs.
+    time_sims, durations = [plume_sim], [default_duration]
+    for fn, (test, coords) in zip(time_tests, time_test_dict.items()):
+        time_plume = PlumeSim(venusdict, coords, f"{coords['duration']}_hr")
+        time_plume.load_file(fn)
+        time_plume.set_resolution()
+        time_sims.append(time_plume)
+        durations.append(coords['duration'])
+
+    # Figure 14: Sensitivity test combining plume-gridbox and maximum dispersal
+    # times for H2O plumes of different injection durations at three altitudes
+    time_vals = time_test(plumes=time_sims, durations=durations,
+                     name_dict=name_dict, levs=[10,14,18], key='h2o',
+                     save=True, savename='fig_time_test' + '.' + filetype,
+                     savepath=savedir, sformat=filetype)
+    print(time_vals)
+
+    for plume in time_sims:
         plume.close()
         del plume
 # %%

@@ -725,6 +725,109 @@ def sensitivity_test(plume5, plume4, plume3, plume2, plume1, plume0,
 
     return sens_tests
 # %%
+def time_test(plumes, durations, name_dict, levs=[10,14,18], key='h2o',
+              lats=[49,82], lons=[92,47], threshold=1.005,
+              max_threshold=1.05, max_lat=70, axis_len=None, logx=False,
+              save=False,
+              savename='time_test.png',
+              savepath=None,
+              sformat='png'):
+    """
+    Plot injection duration vs. dispersal time for H2O at three altitudes.
+
+    Companion to sensitivity_test: instead of varying the strength of the
+    plume, this varies how long the plume is injected for. Each subplot
+    shows, for both an equatorial and a high-latitude eruption:
+      - dispersal time at the plume gridbox (solid lines)
+      - maximum dispersal time anywhere in the hemisphere (dashed lines)
+
+    Each PlumeSim must carry its own plume coordinate dictionary (see
+    time_test_dict in tools.py), because the dispersal time is measured from
+    the end of the injection, which differs between these runs.
+
+    Args:
+        plumes (list): PlumeSim objects, one per injection duration.
+        durations (list): Injection duration in hours for each PlumeSim.
+        name_dict (dict): Dictionary mapping variable names to display names.
+        levs (list): Vertical level indices. Defaults to [10,14,18].
+        key (str): Dictionary key of the data variable.
+        lats (list): Latitude indices of the equatorial and high-latitude plume.
+        lons (list): Longitude indices of the equatorial and high-latitude plume.
+        threshold (float): Threshold for the plume gridbox dispersal time.
+        max_threshold (float): Threshold for the hemispheric maximum dispersal time.
+        max_lat (int): Latitude index dividing the two hemispheres.
+        axis_len (int): Number of time outputs to consider. Defaults to None,
+            which uses all the outputs in each file.
+        logx (bool): Whether to use a log scale for the duration axis. Useful
+            because the longest injection is much longer than the others.
+            Defaults to False.
+        save (bool): Whether to save the plot. Defaults to False.
+        savename (str): Filename for the saved plot. Defaults to 'time_test.png'.
+        savepath (str): Directory path to save the plot. Defaults to None.
+        sformat (str): Format to save the plot. Defaults to 'png'.
+    """
+    if len(plumes) != len(durations):
+        raise ValueError('plumes and durations must be the same length')
+    # Sort by injection duration so the lines are drawn left to right
+    order = np.argsort(durations)
+    plumes = [plumes[i] for i in order]
+    durations = [durations[i] for i in order]
+
+    fig, ax = plt.subplots(1, len(levs), figsize=(5*len(levs), 5))
+    time_tests = []
+    for i, l in enumerate(levs):
+        disp_times_eq_hrs, disp_times_hl_hrs = [], []
+        max_disp_eq_hrs, max_disp_hl_hrs = [], []
+        for plume in plumes:
+            # Number of time outputs in this file, unless the caller has
+            # asked for a shorter window
+            alen = axis_len if axis_len is not None else plume.data[key].shape[0]
+            # --- Dispersal time at the plume gridbox ---
+            times = dispersal_time(plume, lev=l, keys=[key], name_dict=name_dict,
+                                   threshold=threshold, lats=lats, lons=lons,
+                                   axis_len=alen, save=False, plot=False)
+            disp_times_eq_hrs.append(times[0]['disp_time_eq_hrs'])
+            disp_times_hl_hrs.append(times[0]['disp_time_hl_hrs'])
+            # --- Maximum dispersal time anywhere in the hemisphere ---
+            max_disp = max_dispersal(plume, lev=l, lat=max_lat, threshold=max_threshold)
+            max_disp_eq_hrs.append(max_disp['eq_plume_max'])
+            max_disp_hl_hrs.append(max_disp['hl_plume_max'])
+
+        time_dict = {'level': l, 'durations': durations,
+                     'disp_times_eq_hrs': disp_times_eq_hrs, 'disp_times_hl_hrs': disp_times_hl_hrs,
+                     'max_disp_eq_hrs': max_disp_eq_hrs, 'max_disp_hl_hrs': max_disp_hl_hrs}
+        time_tests.append(time_dict)
+
+        # Plume-gridbox dispersal time (solid lines)
+        ax[i].plot(durations, disp_times_eq_hrs, marker='o', color='blue', label='Equatorial, plume gridbox')
+        ax[i].plot(durations, disp_times_hl_hrs, marker='o', color='green', label='High-latitude, plume gridbox')
+        # Maximum dispersal time (dashed lines)
+        ax[i].plot(durations, max_disp_eq_hrs, marker='o', linestyle='--', color='blue', label='Equatorial, maximum')
+        ax[i].plot(durations, max_disp_hl_hrs, marker='o', linestyle='--', color='green', label='High-latitude, maximum')
+
+        letter = chr(97 + i)
+        ax[i].set_title(f'{letter}) {np.round(plumes[0].heights[l],2)} km', fontsize=16)
+        ax[i].set_xlabel('Injection duration / hours', fontsize=16)
+        if logx:
+            ax[i].set_xscale('log')
+            # Otherwise the log minor ticks are labelled as well
+            ax[i].tick_params(axis='x', which='minor', bottom=False, labelbottom=False)
+        ax[i].set_xticks(durations)
+        ax[i].set_xticklabels(durations)
+        ax[i].set_ylabel('Dispersal time / hours', fontsize=16)
+    handles, labels = ax[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center",
+               bbox_to_anchor=(0.5, 0.02), ncol=4, fontsize=13, frameon=False)
+
+    fig.suptitle(f'Sensitivity test for {name_dict[key]} plume injection duration', y=1.01, fontsize=18)
+    plt.subplots_adjust(wspace=0.2, hspace=0.2)
+    if save:
+        plt.savefig(savepath + savename, format=sformat, bbox_inches='tight')
+    else:
+        plt.show()
+
+    return time_tests
+# %%
 def plume_impact(plobject, lev=18, keys=['co', 'ocs'], name_dict=None,
                  t0=0, tf=None, save=False, savename='plume_impact.png',
                  savepath=None, sformat='png'):

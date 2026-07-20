@@ -57,11 +57,28 @@ plume_dict = {  'plume_1': {'name': 'h2o_lev10_eq', 'lev': 10, 'lat_idx': 49, 'l
                 'plume_5': {'name': 'four_gases_lev18_eq', 'lev': 18, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 127},
                 'plume_6': {'name': 'four_gases_lev18_hl', 'lev': 18, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 127}
             }
-time_test_dict = { 'time_test_1': {'name': '6 hr', 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 112},
-                   'time_test_2': {'name': '12 hr', 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 220},
-                   'time_test_3': {'name': '36 hr', 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 652},
-                   'time_test_3': {'name': '120 hr', 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 2164}
+# Dictionary of plume coordinates for the injection duration sensitivity tests.
+# Each entry has the same structure as plume_dict, because the plotting
+# functions read the eruption coordinates and timing off plobject.plumes
+# under the keys 'plume_1' (equatorial) and 'plume_2' (high latitude).
+# 'duration' is the length of the plume injection in hours.
+# NOTE: end_time must be the index of the last *netCDF output* in which the
+# forcing is active, not the last physics timestep.
+time_test_dict = { 'time_test_1': {'duration': 6,
+                                   'plume_1': {'name': 'h2o_lev10_eq_6hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 112},
+                                   'plume_2': {'name': 'h2o_lev10_hl_6hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 112}},
+                   'time_test_2': {'duration': 12,
+                                   'plume_1': {'name': 'h2o_lev10_eq_12hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 220},
+                                   'plume_2': {'name': 'h2o_lev10_hl_12hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 220}},
+                   'time_test_3': {'duration': 36,
+                                   'plume_1': {'name': 'h2o_lev10_eq_36hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 652},
+                                   'plume_2': {'name': 'h2o_lev10_hl_36hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 652}},
+                   'time_test_4': {'duration': 120,
+                                   'plume_1': {'name': 'h2o_lev10_eq_120hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 2164},
+                                   'plume_2': {'name': 'h2o_lev10_hl_120hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 2164}}
                 }
+# The default 28 hour injection is the main set of runs, described by plume_dict
+default_duration = 28
 
 name_dict = {'h2o': 'H$_2$O', 'hcl': 'HCl', 'co': 'CO', 'ocs': 'OCS', 'so2': 'SO$_2$'}
 
