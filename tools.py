@@ -57,6 +57,11 @@ plume_dict = {  'plume_1': {'name': 'h2o_lev10_eq', 'lev': 10, 'lat_idx': 49, 'l
                 'plume_5': {'name': 'four_gases_lev18_eq', 'lev': 18, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 127},
                 'plume_6': {'name': 'four_gases_lev18_hl', 'lev': 18, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 127}
             }
+time_test_dict = { 'time_test_1': {'name': '6 hr', 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 112},
+                   'time_test_2': {'name': '12 hr', 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 220},
+                   'time_test_3': {'name': '36 hr', 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 652},
+                   'time_test_3': {'name': '120 hr', 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 2164}
+                }
 
 name_dict = {'h2o': 'H$_2$O', 'hcl': 'HCl', 'co': 'CO', 'ocs': 'OCS', 'so2': 'SO$_2$'}
 
