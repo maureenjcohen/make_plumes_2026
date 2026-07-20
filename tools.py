@@ -170,11 +170,15 @@ def max_dispersal(plobject, lev, lat, threshold=1.05, cube=None,
         if start_time < 1:
             raise ValueError('No outputs before the injection starts, '
                              'cannot use pre_eruption_bg')
-        wghtd_mean = np.sum(cube[:start_time,:,:]*area_weights) / np.sum(area_weights)
-        background = wghtd_mean*threshold
+        window = cube[:start_time,:,:]
     else:
-        wghtd_mean = np.sum(cube*area_weights) / np.sum(area_weights)
-        background = wghtd_mean*threshold
+        window = cube
+    # Mean over time first, then an area-weighted mean over lon and lat.
+    # Weighting the (time, lat, lon) cube directly and dividing by the sum of
+    # the (lat, lon) weights leaves the result multiplied by the number of
+    # time outputs.
+    wghtd_mean = np.average(np.mean(window, axis=0), weights=area_weights)
+    background = wghtd_mean*threshold
     post_eruption = cube[plobject.plumes['plume_1']['end_time']:,:,:]
     # Only consider data after plume forcing has finished
     mask = post_eruption > background
