@@ -1,5 +1,7 @@
 # Environment variables - never commit
 .env
+.txt
+.tex
 
 # Python
 __pycache__/
