@@ -65,7 +65,59 @@ def zmage(plobject, hmin=0, hmax=None, time_slice=-1, convert2yr=True,
         plt.show()
 
 # %%
-def plume_cross_section(plobject, key, lev, times=[54,104,174], 
+def age_map(plobject, lev=18, time_slice=-1, convert2yr=True,
+            plume_markers=None, levels=None, savepath=None,
+            save=False, sformat='png', savename='age_map.png'):
+    """
+    Plot a longitude-latitude map of the age of air at a given level,
+    showing the variation of age of air as a function of longitude in particular.
+
+    Args:
+        plobject (PlumeSim): PlumeSim object containing the data.
+        lev (int): Vertical level index. Defaults to 18 (35.45 km).
+        time_slice (int): Time index to select. Defaults to -1.
+        convert2yr (bool): Whether to convert units to years. Defaults to True.
+        plume_markers (dict, optional): Plume dict for marking plume locations. Defaults to None.
+        levels (list, optional): Contour levels. Defaults to None.
+        savepath (str): Directory path to save the plot. Defaults to None.
+        save (bool): Whether to save the plot. Defaults to False.
+        sformat (str): Format to save the plot. Defaults to 'png'.
+        savename (str): Filename for the saved plot. Defaults to 'age_map.png'.
+    """
+    ageo = plobject.data['age']
+    # Select time slice and level
+    ageo = ageo[time_slice,lev,:,:]
+
+    if convert2yr:
+        ageo = ageo/(60*60*24*360)
+        cunit = 'Earth years'
+    else:
+        cunit = 'seconds'
+
+    height = np.round(plobject.heights[lev], 2)
+
+    fig = plt.figure(figsize=(6, 6))
+    plt.contourf(plobject.lons, plobject.lats,
+                 ageo,
+                 levels=levels,
+                 cmap='plasma')
+    if plume_markers is not None:
+        for plume in plume_markers:
+            plt.plot(plobject.lons[plume_markers[plume]['lon_idx']], plobject.lats[plume_markers[plume]['lat_idx']], marker='*', color='black', markersize=10)
+    plt.title(f'Age of air at {height} km', fontsize=16)
+    plt.xlabel('Longitude / deg', fontsize=16)
+    plt.ylabel('Latitude / deg', fontsize=16)
+    cbar = plt.colorbar()
+    cbar.set_label(f'{cunit}', fontsize=16)
+
+    if save:
+        plt.savefig(savepath + savename, format=sformat, bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+
+# %%
+def plume_cross_section(plobject, key, lev, times=[54,104,174],
                         save=False, savename='plume_cross_section.png',
                         savepath=None, sformat='png'):
     """Plot a cross section of the plume for a given variable.  
