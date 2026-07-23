@@ -977,6 +977,7 @@ def wind_variation(plobject, lev=18, time_slice=-1, lat_idx=None, lon_idx=None,
             if i == 2:
                 # Vertical profile: altitude on the y-axis
                 ax.plot(slicer(cube), coords, color='black')
+                ax.set_ylim(0, 40)
                 ax.set_xlabel('Wind speed / m/s', fontsize=16)
                 if j == 0:
                     ax.set_ylabel(clabel, fontsize=16)
