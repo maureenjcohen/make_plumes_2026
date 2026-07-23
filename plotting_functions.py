@@ -957,7 +957,7 @@ def wind_variation(plobject, lev=18, time_slice=-1, lat_idx=None, lon_idx=None,
     lon_val = plobject.lons[lon_idx]
 
     winds = [('Zonal', u), ('Meridional', v)]
-    # Each row: (x-axis values, x-axis label, cut description, slicer)
+    # Each row: (coordinate values, coordinate label, cut description, slicer)
     rows = [(plobject.lons, 'Longitude / deg',
              f'{lat_val:.0f} deg lat, {height} km',
              lambda cube: cube[lev, lat_idx, :]),
@@ -969,15 +969,22 @@ def wind_variation(plobject, lev=18, time_slice=-1, lat_idx=None, lon_idx=None,
              lambda cube: cube[:, lat_idx, lon_idx])]
 
     fig, axes = plt.subplots(3, 2, figsize=(10, 12), tight_layout=True)
-    for i, (xvals, xlabel, cut, slicer) in enumerate(rows):
+    for i, (coords, clabel, cut, slicer) in enumerate(rows):
         for j, (direction, cube) in enumerate(winds):
             ax = axes[i, j]
-            ax.plot(xvals, slicer(cube), color='black')
             letter = chr(97 + i*2 + j)
             ax.set_title(f'{letter}) {direction} wind at {cut}', fontsize=16)
-            ax.set_xlabel(xlabel, fontsize=16)
-            if j == 0:
-                ax.set_ylabel('Wind speed / m/s', fontsize=16)
+            if i == 2:
+                # Vertical profile: altitude on the y-axis
+                ax.plot(slicer(cube), coords, color='black')
+                ax.set_xlabel('Wind speed / m/s', fontsize=16)
+                if j == 0:
+                    ax.set_ylabel(clabel, fontsize=16)
+            else:
+                ax.plot(coords, slicer(cube), color='black')
+                ax.set_xlabel(clabel, fontsize=16)
+                if j == 0:
+                    ax.set_ylabel('Wind speed / m/s', fontsize=16)
             ax.grid(True, alpha=0.5)
 
     fig.suptitle('Spatial variation of horizontal winds', y=1.02, fontsize=18)
