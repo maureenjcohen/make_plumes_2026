@@ -59,17 +59,17 @@ plume_dict = {  'plume_1': {'name': 'h2o_lev10_eq', 'lev': 10, 'lat_idx': 49, 'l
             }
 # Dictionary of plume coordinates for the injection duration sensitivity tests.
 time_test_dict = { 'time_test_1': {'duration': 6,
-                                   'plume_1': {'name': 'h2o_lev10_eq_6hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 28},
-                                   'plume_2': {'name': 'h2o_lev10_hl_6hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 28}},
+                                   'plume_1': {'name': 'h2o_lev10_eq_6hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 30},
+                                   'plume_2': {'name': 'h2o_lev10_hl_6hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 30}},
                    'time_test_2': {'duration': 12,
-                                   'plume_1': {'name': 'h2o_lev10_eq_12hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 55},
-                                   'plume_2': {'name': 'h2o_lev10_hl_12hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 55}},
-                   'time_test_3': {'duration': 36,
-                                   'plume_1': {'name': 'h2o_lev10_eq_36hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 163},
-                                   'plume_2': {'name': 'h2o_lev10_hl_36hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 163}},
-                   'time_test_4': {'duration': 120,
-                                   'plume_1': {'name': 'h2o_lev10_eq_120hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 541},
-                                   'plume_2': {'name': 'h2o_lev10_hl_120hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 541}}
+                                   'plume_1': {'name': 'h2o_lev10_eq_12hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 57},
+                                   'plume_2': {'name': 'h2o_lev10_hl_12hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 57}},
+                   'time_test_3': {'duration': 38,
+                                   'plume_1': {'name': 'h2o_lev10_eq_36hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 165},
+                                   'plume_2': {'name': 'h2o_lev10_hl_36hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 165}},
+                   'time_test_4': {'duration': 126,
+                                   'plume_1': {'name': 'h2o_lev10_eq_120hr', 'lev': 10, 'lat_idx': 49, 'lon_idx': 92, 'start_time': 4, 'end_time': 543},
+                                   'plume_2': {'name': 'h2o_lev10_hl_120hr', 'lev': 10, 'lat_idx': 82, 'lon_idx': 47, 'start_time': 4, 'end_time': 543}}
                 }
 # The default 28 hour injection is the main set of runs, described by plume_dict
 default_duration = 28
@@ -138,7 +138,7 @@ def count_above(series, start, background):
 
 # %%
 def max_dispersal(plobject, lev, lat, threshold=1.05, cube=None,
-                  pre_eruption_bg=False):
+                  pre_eruption_bg=True):
     """
     Find the longest dispersal time anywhere in each hemisphere.
 

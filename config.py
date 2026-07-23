@@ -7,6 +7,7 @@ load_dotenv()
 
 # %% Filepaths
 plumes = os.getenv('PLUMES')
+baseline = os.getenv('BASELINE')
 sens_tests = [
     os.getenv('SENS_TEST_1'),
     os.getenv('SENS_TEST_2'),

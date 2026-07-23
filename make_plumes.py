@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
     # Figure 14: Sensitivity test combining plume-gridbox and maximum dispersal
     # times for H2O plumes of different injection durations at three altitudes
-    time_vals = time_test(plumes=time_sims, durations=durations,
+    time_vals = time_test(plumes=time_sims, durations=[28,6,12,38,126],
                      name_dict=name_dict, levs=[10,14,18], key='h2o',
                      save=True, savename='fig_time_test' + '.' + filetype,
                      savepath=savedir, sformat=filetype)
