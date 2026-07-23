@@ -969,7 +969,7 @@ def plume_impact(plobject, lev=18, keys=['co', 'ocs'], name_dict=None,
         plt.show()
 
 # %%
-def wind_variation(plobject, lev=18, time_slice=-1, lat_idx=None, lon_idx=None,
+def wind_variation(plobject, lev=18, ylim=22, time_slice=-1, lat_idx=None, lon_idx=None,
                    save=False, savename='wind_variation.png',
                    savepath=None, sformat='png'):
     """
@@ -1001,8 +1001,8 @@ def wind_variation(plobject, lev=18, time_slice=-1, lat_idx=None, lon_idx=None,
     if lon_idx is None:
         lon_idx = int(np.argmin(np.abs(plobject.lons)))
 
-    u = plobject.data['vitu'][time_slice,:,:,:]
-    v = plobject.data['vitv'][time_slice,:,:,:]
+    u = plobject.data['vitu'][time_slice,:ylim,:,:]
+    v = plobject.data['vitv'][time_slice,:ylim,:,:]
 
     height = np.round(plobject.heights[lev], 2)
     lat_val = plobject.lats[lat_idx]
@@ -1016,7 +1016,7 @@ def wind_variation(plobject, lev=18, time_slice=-1, lat_idx=None, lon_idx=None,
             (plobject.lats, 'Latitude / deg',
              f'{lon_val:.0f} deg lon, {height} km',
              lambda cube: cube[lev, :, lon_idx]),
-            (plobject.heights, 'Height / km',
+            (plobject.heights[:ylim], 'Height / km',
              f'{lat_val:.0f} deg lat, {lon_val:.0f} deg lon',
              lambda cube: cube[:, lat_idx, lon_idx])]
 
@@ -1030,9 +1030,9 @@ def wind_variation(plobject, lev=18, time_slice=-1, lat_idx=None, lon_idx=None,
             ax.set_xlabel(clabel, fontsize=16)
             if j == 0:
                 ax.set_ylabel('Wind speed / m/s', fontsize=16)
-            if i == 2:
-                # Limit the vertical profiles to 0-40 km altitude
-                ax.set_xlim(0, 40)
+            # if i == 2:
+            #     # Limit the vertical profiles to 0-40 km altitude
+            #     ax.set_xlim(0, 40)
             ax.grid(True, alpha=0.5)
 
     fig.suptitle('Spatial variation of horizontal winds', y=1.02, fontsize=18)
