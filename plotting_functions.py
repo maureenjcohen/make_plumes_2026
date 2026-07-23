@@ -180,7 +180,7 @@ def plume_cross_section(plobject, key, lev, times=[54,104,174],
 
 # %%
 def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
-                   axis_len=500, cube=None, save=False, plot=True,
+                   axis_len=500, cube=None, control=None, save=False, plot=True,
                    savename='plume_dispersal.png',
                    savepath=None,
                    sformat='png'):
@@ -194,6 +194,10 @@ def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
         threshold (float or None): Threshold value for defining the plume.
         cube (np.ndarray, optional): Pre-loaded (time, lat, lon) array for this
             level, to avoid re-reading the file. Only valid for a single key.
+        control (PlumeSim, optional): A simulation without plumes but otherwise
+            identical to plobject. If given, the control values at the plume
+            gridboxes are plotted over the same time window, showing the
+            background variability of the species. Defaults to None.
         save (bool): Whether to save the plot. Defaults to False.
         savename (str): Filename for the saved plot. Defaults to 'plume_dispersal.png'.
         savepath (str): Directory path to save the plot. Defaults to None.
@@ -258,7 +262,13 @@ def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
         # Get data, including 5 time steps before and after plume
         data1 = series1[plobject.plumes['plume_1']['start_time']-2:axis_len]*1e6
         data2 = series2[plobject.plumes['plume_1']['start_time']-2:axis_len]*1e6
-    
+
+        # Extract the same gridboxes from the no-plume control run over the
+        # same time window, to show the background variability of the species
+        if control is not None:
+            cdata1 = control.data[key][:,lev,lats[0],lons[0]].values[plobject.plumes['plume_1']['start_time']-2:axis_len]*1e6
+            cdata2 = control.data[key][:,lev,lats[1],lons[1]].values[plobject.plumes['plume_1']['start_time']-2:axis_len]*1e6
+
         if plot==True:
             ax = fig.add_subplot(num_rows, num_cols, position[i])
             ax.plot(time_axis, data1, color='red', label=rf'{np.round(plobject.lats[lats[0]],2)}°N: $\tau_d$={np.round(disp_hours1,2)} h')
@@ -267,6 +277,11 @@ def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
                     linestyle='dashed')
             ax.plot(time_axis, np.ones_like(data1)*background_val2*1e6, color='blue',
                     linestyle='dashed')
+            if control is not None:
+                ax.plot(time_axis[:len(cdata1)], cdata1, color='red', linestyle='dotted',
+                        alpha=0.8, label=rf'{np.round(plobject.lats[lats[0]],2)}°N: no plume')
+                ax.plot(time_axis[:len(cdata2)], cdata2, color='blue', linestyle='dotted',
+                        alpha=0.8, label=rf'{np.round(plobject.lats[lats[1]],2)}°N: no plume')
             title = name_dict.get(key, key)
             if num_subplots > 1:
                 letter = chr(97 + i)
