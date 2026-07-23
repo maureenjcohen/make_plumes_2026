@@ -96,7 +96,7 @@ def age_map(plobject, lev=18, time_slice=-1, convert2yr=True,
 
     height = np.round(plobject.heights[lev], 2)
 
-    fig = plt.figure(figsize=(6, 6))
+    fig = plt.figure(figsize=(, 6))
     plt.contourf(plobject.lons, plobject.lats,
                  ageo,
                  levels=levels,
