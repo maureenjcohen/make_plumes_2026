@@ -72,6 +72,11 @@ if __name__ == "__main__":
     plume_sim.load_file(plumes)
     plume_sim.set_resolution()
 
+    # %%
+    baseline_sim = PlumeSim(venusdict, plume_dict, 'no plumes')
+    baseline_sim.load_file(baseline)
+    baseline_sim.set_resolution()
+
     # Figure 2: Plume cross section of H2O at 35 km
     plume_cross_section(plume_sim, key='h2o', lev=18, times=[54,104,174],
                         save=True, savename='fig_plume_xsect' + '.' + filetype,
@@ -97,17 +102,17 @@ if __name__ == "__main__":
     
     # Figure 3: Dispersal time of H2O plumes at 8 km
     dispersal_time(plume_sim, lev=10, keys=['h2o'], lats=[49,82], lons=[92,47], 
-                   name_dict=name_dict, threshold=1.005, axis_len=500,
+                   name_dict=name_dict, threshold=1.005, axis_len=500, control=baseline_sim,
                    save=True, savename='fig_dtime_lev10' + '.' + filetype, sformat=filetype,
                    savepath=savedir)
     # Figure 6: Dispersal time of H2O and HCl plumes at 20 km
     dispersal_time(plume_sim, lev=14, keys=['h2o', 'hcl'], lats=[49,82], lons=[92,47], 
-                   name_dict=name_dict, threshold=1.005, axis_len=500,
+                   name_dict=name_dict, threshold=1.005, axis_len=500, control=baseline_sim,
                    save=True, savename='fig_dtime_lev14' + '.' + filetype, sformat=filetype,
                    savepath=savedir)
     # Figure 9: Dispersal time of four gas plumes at 35 km
     dispersal_time(plume_sim, lev=18, keys=['h2o', 'hcl', 'co', 'ocs'], lats=[49,82], lons=[92,47], 
-                   name_dict=name_dict, threshold=1.005, axis_len=500,
+                   name_dict=name_dict, threshold=1.005, axis_len=500, control=baseline_sim,
                    save=True, savename='fig_dtime_lev18' + '.' + filetype, sformat=filetype,
                    savepath=savedir)
 

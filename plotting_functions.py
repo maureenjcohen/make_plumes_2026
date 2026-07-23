@@ -273,14 +273,14 @@ def dispersal_time(plobject, lev, keys, lats, lons, name_dict, threshold,
             ax = fig.add_subplot(num_rows, num_cols, position[i])
             ax.plot(time_axis, data1, color='red', label=rf'{np.round(plobject.lats[lats[0]],2)}°N: $\tau_d$={np.round(disp_hours1,2)} h')
             ax.plot(time_axis, data2, color='blue', label=rf'{np.round(plobject.lats[lats[1]],2)}°N: $\tau_d$={np.round(disp_hours2,2)} h')
-            ax.plot(time_axis, np.ones_like(data1)*background_val1*1e6, color='red',
-                    linestyle='dashed')
-            ax.plot(time_axis, np.ones_like(data1)*background_val2*1e6, color='blue',
-                    linestyle='dashed')
+            # ax.plot(time_axis, np.ones_like(data1)*background_val1*1e6, color='red',
+            #         linestyle='dashed')
+            # ax.plot(time_axis, np.ones_like(data1)*background_val2*1e6, color='blue',
+            #         linestyle='dashed')
             if control is not None:
-                ax.plot(time_axis[:len(cdata1)], cdata1, color='red', linestyle='dotted',
+                ax.plot(time_axis[:len(cdata1)], cdata1, color='red', linestyle='dashed',
                         alpha=0.8, label=rf'{np.round(plobject.lats[lats[0]],2)}°N: no plume')
-                ax.plot(time_axis[:len(cdata2)], cdata2, color='blue', linestyle='dotted',
+                ax.plot(time_axis[:len(cdata2)], cdata2, color='blue', linestyle='dashed',
                         alpha=0.8, label=rf'{np.round(plobject.lats[lats[1]],2)}°N: no plume')
             title = name_dict.get(key, key)
             if num_subplots > 1:
