@@ -915,4 +915,75 @@ def plume_impact(plobject, lev=18, keys=['co', 'ocs'], name_dict=None,
         plt.savefig(savepath + savename, format=sformat, bbox_inches='tight')
     else:
         plt.show()
+
+# %%
+def wind_variation(plobject, lev=18, time_slice=-1, lat_idx=None, lon_idx=None,
+                   save=False, savename='wind_variation.png',
+                   savepath=None, sformat='png'):
+    """
+    Show the scale of spatial variation of the winds in each dimension.
+
+    Creates a 3x2 subplot figure of line plots. First column is zonal wind
+    (vitu), second column is meridional wind (vitv). First row shows wind
+    against longitude at a fixed latitude, second row wind against latitude
+    at a fixed longitude, third row wind against altitude at the fixed
+    latitude/longitude. Winds vary most along the altitude axis, second most
+    along latitude, and least along longitude.
+
+    Args:
+        plobject (PlumeSim): PlumeSim object containing the data.
+        lev (int): Vertical level index for the horizontal cuts. Defaults to 18 (35.45 km).
+        time_slice (int): Time index to select. Defaults to -1.
+        lat_idx (int, optional): Latitude index for the wind vs longitude and
+            wind vs altitude cuts. Defaults to None (nearest to the equator).
+        lon_idx (int, optional): Longitude index for the wind vs latitude and
+            wind vs altitude cuts. Defaults to None (nearest to 0 deg).
+        save (bool): Whether to save the plot. Defaults to False.
+        savename (str): Filename for the saved plot. Defaults to 'wind_variation.png'.
+        savepath (str): Directory path to save the plot. Defaults to None.
+        sformat (str): Format to save the plot. Defaults to 'png'.
+    """
+    # Default to the grid points nearest the equator and 0 deg longitude
+    if lat_idx is None:
+        lat_idx = int(np.argmin(np.abs(plobject.lats)))
+    if lon_idx is None:
+        lon_idx = int(np.argmin(np.abs(plobject.lons)))
+
+    u = plobject.data['vitu'][time_slice,:,:,:]
+    v = plobject.data['vitv'][time_slice,:,:,:]
+
+    height = np.round(plobject.heights[lev], 2)
+    lat_val = plobject.lats[lat_idx]
+    lon_val = plobject.lons[lon_idx]
+
+    winds = [('Zonal', u), ('Meridional', v)]
+    # Each row: (x-axis values, x-axis label, cut description, slicer)
+    rows = [(plobject.lons, 'Longitude / deg',
+             f'{lat_val:.0f} deg lat, {height} km',
+             lambda cube: cube[lev, lat_idx, :]),
+            (plobject.lats, 'Latitude / deg',
+             f'{lon_val:.0f} deg lon, {height} km',
+             lambda cube: cube[lev, :, lon_idx]),
+            (plobject.heights, 'Height / km',
+             f'{lat_val:.0f} deg lat, {lon_val:.0f} deg lon',
+             lambda cube: cube[:, lat_idx, lon_idx])]
+
+    fig, axes = plt.subplots(3, 2, figsize=(10, 12), tight_layout=True)
+    for i, (xvals, xlabel, cut, slicer) in enumerate(rows):
+        for j, (direction, cube) in enumerate(winds):
+            ax = axes[i, j]
+            ax.plot(xvals, slicer(cube), color='black')
+            letter = chr(97 + i*2 + j)
+            ax.set_title(f'{letter}) {direction} wind at {cut}', fontsize=16)
+            ax.set_xlabel(xlabel, fontsize=16)
+            if j == 0:
+                ax.set_ylabel('Wind speed / m/s', fontsize=16)
+            ax.grid(True, alpha=0.5)
+
+    fig.suptitle('Spatial variation of horizontal winds', y=1.02, fontsize=18)
+    if save:
+        plt.savefig(savepath + savename, format=sformat, bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
 # %%
