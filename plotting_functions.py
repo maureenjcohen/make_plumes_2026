@@ -973,19 +973,14 @@ def wind_variation(plobject, lev=18, time_slice=-1, lat_idx=None, lon_idx=None,
         for j, (direction, cube) in enumerate(winds):
             ax = axes[i, j]
             letter = chr(97 + i*2 + j)
+            ax.plot(coords, slicer(cube), color='black')
             ax.set_title(f'{letter}) {direction} wind at {cut}', fontsize=16)
+            ax.set_xlabel(clabel, fontsize=16)
+            if j == 0:
+                ax.set_ylabel('Wind speed / m/s', fontsize=16)
             if i == 2:
-                # Vertical profile: altitude on the y-axis
-                ax.plot(slicer(cube), coords, color='black')
-                ax.set_ylim(0, 40)
-                ax.set_xlabel('Wind speed / m/s', fontsize=16)
-                if j == 0:
-                    ax.set_ylabel(clabel, fontsize=16)
-            else:
-                ax.plot(coords, slicer(cube), color='black')
-                ax.set_xlabel(clabel, fontsize=16)
-                if j == 0:
-                    ax.set_ylabel('Wind speed / m/s', fontsize=16)
+                # Limit the vertical profiles to 0-40 km altitude
+                ax.set_xlim(0, 40)
             ax.grid(True, alpha=0.5)
 
     fig.suptitle('Spatial variation of horizontal winds', y=1.02, fontsize=18)
